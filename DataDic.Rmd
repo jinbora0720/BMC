@@ -1,0 +1,45 @@
+---
+title: "Data Dictionary"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Data Structure 
+
+`datalist.rds` is a list containing `neuro_data`, `obese_data`, and `hit_vec`. 
+
+* `neuro_data` is the processed ToxCast/Tox21 data with 30 chemicals and 131 assay endpoints relevant to neurodevelopmental disorders. 
+* `obese_data` is the processed ToxCast/Tox21 data with 30 chemicals and 271 obesity-related assay endpoints. 
+* `hit_vec` includes hit-call values based on invitroDBv2 of EPA. 
+
+## Variables 
+
+For `neuro_data` and `obese_data`, 
+
+* `aeid`: assay endpoint ID
+* `aenm`: assay endpoint name
+* `casn`: CAS registry number 
+* `code`: C followed by `casn` without hyphens
+* `chnm`: chemical name
+* `logc`: log base 10 concentration
+* `resp`: response value. 
+
+`hit_vec` has 
+
+* `code`: C followed by `casn` without hyphens
+* `aenm`: assay endpoint name
+* `hitc`: hit-call value where 1 if active, 0 if inactive, -1 if cannot be determined, and NA if not tested. 
+
+```{r , include = FALSE}
+datalist <- readRDS("~/Documents/GitHub/BMC/datalist.rds")
+```
+
+```{r call data}
+names(datalist)
+neuro_data <- datalist$neuro_data
+obese_data <- datalist$neuro_data
+hit_vec <- datalist$hit_vec
+```
