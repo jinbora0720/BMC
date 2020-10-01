@@ -34,7 +34,7 @@ For `neuro_data` and `obese_data`,
 * `hitc`: hit-call value where 1 if active, 0 if inactive, -1 if cannot be determined, and NA if not tested. 
 
 ```{r , include = FALSE}
-datalist <- readRDS("~/Documents/GitHub/BMC/datalist.rds")
+datalist <- readRDS("~/Documents/GitHub/BMC/data/datalist.rds")
 ```
 
 ```{r call data}
