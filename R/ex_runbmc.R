@@ -1,0 +1,51 @@
+# Example code to show how to run bmc 
+
+# dependencies 
+library(MASS)
+library(Rcpp) 
+library(tidyverse) 
+library(splines) 
+
+# source code
+source("bmc.R")
+source("bmc_sampler.R")
+sourceCpp("bmc_sampler2.cpp")
+sourceCpp("samplerBits.cpp")
+
+########
+# Data #
+########
+datalist <- readRDS("~/Documents/GitHub/BMC/data/datalist.rds")
+obese_data <- datalist$obese_data
+hit_vec <- datalist$hit_vec
+meta <- readRDS("obese_meta.rds")
+meta$orgX <- lapply(meta$orgData, function(x) x[,1])
+
+###################
+# MCMC parameters #
+###################
+thin <- 1
+burnin <- 1
+save <- 1
+MCMC <- list(thin = thin, burnin = burnin, save = save)
+
+###################
+# hyperparameters #
+###################
+dat <- data.frame(resp = unlist(meat$Y), logc = unlist(lapply(meta$orgData, function(x) x[,1])))  
+ddat <- dat %>% filter(logc!=0) %>% group_by(logc) %>% 
+  summarise(v = sd(resp)) %>% mutate(d = 2*log(v)/logc)
+v_d <- ((max(ddat$d) - min(ddat$d))/4)^2
+hyper <- list(v_d = v_d)
+
+##################
+# initial values #
+##################
+q <- 11 
+init <- list(q = q)
+
+###########
+# run bmc # 
+###########
+out <- bmc(Data = meta, MCMC = MCMC, hyper = hyper, init = init, 
+           hetero = TRUE, adapt = TRUE, simpler = FALSE, verbose = TRUE)
