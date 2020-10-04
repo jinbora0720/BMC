@@ -1,4 +1,5 @@
-# Simulation 2: Table S1: summary of results
+# Simulation 2
+# Table S1: summary of results from simulation 2
 
 # call data
 AllRes <- readRDS("sim2_results.rds")

@@ -2,10 +2,7 @@
 
 # dependencies
 library(tidyverse)
-library(reshape2)
-library(gridExtra)
 library(Rcpp)
-library(ggpubr)
 library(tcpl)
 
 # source code
@@ -22,6 +19,22 @@ resj <- readRDS("sim1_BMCj.rds") # BMC_j
 res_tcpl <- readRDS("sim1_tcpl.rds") # tcpl
 res_ZIPLL <- readRDS("sim1_ZIPLL.rds") # ZIPLL
 prc_res <- readRDS("sim1_processed.rds") # pre-processed posterior predictive results from BMC
+
+# arrange data
+m <- 30; J <- 150
+gendata <- generate_data(m, J, d=3, seed=res$seedsave[50])
+simdata <- gendata$simdata
+truth <- gendata$truth
+simdata$rxf <- truth$rxf
+misdata <- data_missing(simdata, prob_missing=0.03, missing_idx=NULL, seed=res$seedsave[50])
+missing_idx <- misdata$missing_idx 
+
+gamma_ij.save <- out$gamma_ij.save 
+z.save <- lapply(mapply("tcrossprod", out$Lambda.save, out$eta.save, SIMPLIFY = FALSE), function(x) matrix(rnorm(m*J, x, 1), m, J))
+gamma_ij.save[is.na(gamma_ij.save)] <- sapply(z.save, function(x) x[missing_idx]>0)
+gamma_ij.postm <- rowMeans(gamma_ij.save, dim=2, na.rm=TRUE)
+tr_gamma_ij.postm <- rowMeans(out$gamma_ij.save, dim=2, na.rm=TRUE)
+t_ij.postm <- rowMeans(out$t_ij.save, dims=2)
 
 #----------------------------------------------------------------------------------------------------------------------------------
 # Table 1: summary of results (make mean and sd tables separately)
@@ -44,18 +57,10 @@ cat('sd table\n'); sdres
 
 #----------------------------------------------------------------------------------------------------------------------------------
 # Figure 4: heat map of the estimated and true correlation matrix 
-m <- 30; J <- 150
-gendata <- generate_data(m, J, d=3, seed=res$seedsave[50])
-simdata <- gendata$simdata
-truth <- gendata$truth
-simdata$rxf <- truth$rxf
-misdata <- data_missing(simdata, prob_missing=0.03, missing_idx=NULL, seed=res$seedsave[50])
-missing_idx <- misdata$missing_idx 
-
 z_cor_T <- cov2cor(tcrossprod(truth$Lambda) + diag(1, m))
-z_cor_data <- melt(z_cor_T)
+z_cor_data <- reshape2::melt(z_cor_T)
 cor.postm <- cov2cor(out$covMean)
-cor.postm_data <- data.frame(melt(cor.postm), truevalue = z_cor_data$value)
+cor.postm_data <- data.frame(reshape2::melt(cor.postm), truevalue = z_cor_data$value)
 
 rng <- range(cor.postm, z_cor_T)
 t1 <- ggplot(cor.postm_data)+
@@ -119,13 +124,7 @@ gridExtra::grid.arrange(t3, t4, nrow=1)
 
 #----------------------------------------------------------------------------------------------------------------------------------
 # Figure 6: heat map of estimate and tru profiles of the mean effect 
-gamma_ij.save <- out$gamma_ij.save 
-z.save <- lapply(mapply("tcrossprod", out$Lambda.save, out$eta.save, SIMPLIFY = FALSE), function(x) matrix(rnorm(m*J, x, 1), m, J))
-gamma_ij.save[is.na(gamma_ij.save)] <- sapply(z.save, function(x) x[missing_idx]>0)
-gamma_ij.postm <- rowMeans(gamma_ij.save, dim=2, na.rm=TRUE)
-tr_gamma_ij.postm <- rowMeans(out$gamma_ij.save, dim=2, na.rm=TRUE)
 pred <- which(is.na(tr_gamma_ij.postm[6:10,6:10]), arr.ind = TRUE)
-
 frames <- data.frame(Var1=pred[,1], Var2=pred[,2])
 t5 <- reshape2::melt(gamma_ij.postm[6:10,6:10]) %>% 
   rename(Chem = Var1, Assay = Var2) %>% 
@@ -155,21 +154,23 @@ gridExtra::grid.arrange(t5, t6, nrow=1, widths=c(1.345/3,1.655/3))
 
 #----------------------------------------------------------------------------------------------------------------------------------
 # Figure 7: dose-response curves
-data_f7 <- list(simdata = simdata, truth = truth)
-res_f7 <- list(res_ZIPLL = res_ZIPLL, out = out, prc_res = prc_res)
+data_f7 <- list(misdata = misdata, truth = truth)
+res_f7 <- list(res_ZIPLL = res_ZIPLL, 
+               out = list(gamma_ij.postm = gamma_ij.postm, t_ij.postm = t_ij.postm), 
+               prc_res = prc_res)
 
 t7 <- dosres_plot(i = 26, j = 67, data = data_f7, result = res_f7)
 t8 <- dosres_plot(i = 5, j = 2, data = data_f7, result = res_f7)
 t9 <- dosres_plot(i = 24, j = 104, data = data_f7, result = res_f7)
 
-ggarrange(t7, t8, t9, nrow=1, ncol=3, common.legend=TRUE, legend="bottom", labels="AUTO")
+ggpubr::ggarrange(t7, t8, t9, nrow=1, ncol=3, common.legend=TRUE, legend="bottom", labels="AUTO")
 
 #----------------------------------------------------------------------------------------------------------------------------------
 # Figure 8: residuals versus fitted values 
-data_f8 <- simdata
+data_f8 <- misdata
 res_f8 <- list(res_ZIPLL = res_ZIPLL, prc_res = prc_res)
 
 t10 <- resid_plot(i = 26, j = 67, data = data_f8, result = res_f8)
 t11 <- resid_plot(i = 5, j = 2, data = data_f8, result = res_f8)
 
-ggarrange(t10, t11, nrow=1, common.legend=TRUE, legend="bottom", labels="AUTO")
+ggpubr::ggarrange(t10, t11, nrow=1, common.legend=TRUE, legend="bottom", labels="AUTO")
