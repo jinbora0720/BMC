@@ -1,10 +1,21 @@
-# Data must have X, Y, orgX, Start, End, idx_j, m_j
-# hyper must have v_d
-# init must have q
-# hetero = TRUE to model heteroscedasticity 
-# adapt = TRUE to adapt the number of factors at each iteration
-# simpler = c("bmc0", "bmci", "bmcj") for simpler structure of gamma_ij
-# verbose = TRUE to show progress bars 
+# Data must have 
+## X (a list of spline basis matrix),
+## Y (a list of responses), 
+## orgX (a list of orginal doses), 
+## Start (a matrix of starting indices for chemicals when all measurements are aggregated by each assay endpoint), 
+## End (a matrix of end indices), 
+## e.g. Start[1:3, 1] = 1, 17, 33, End[1:3, 1] = 16, 32, 40
+## The first and the second chemical tested on the first assay endpoint have 16 measurements each, 
+## while the third chemical has 8 measurements. 
+## idx_j (a list of chemical indices (1 to m) with at least one measurement for each assay endpoint), 
+## m_j (a vector of number of chemicals tested for each assay endpoint).
+
+# hyper must have v_d (numeric, normal variance for the amount of heteroscedasticity delta_ij).
+# init must have q (numeric, initial or fixed number of factors).
+# hetero = TRUE to model heteroscedasticity. 
+# adapt = TRUE to adapt the number of factors at each iteration.
+# simpler = c("bmc0", "bmci", "bmcj") for simpler structure of gamma_ij.
+# verbose = TRUE to show progress bars. 
 
 bmc <- function(Data = list(), MCMC = list(thin=1, burnin=0, save=1000), 
                 hyper = list(), init = list(), 
@@ -365,9 +376,11 @@ bmc <- function(Data = list(), MCMC = list(thin=1, burnin=0, save=1000),
     if (verbose) {
       setTxtProgressBar(pb, s/burnin) 
       if (s > burnin) {
-        close(pb)
-        cat('saving...\n')
-        setTxtProgressBar(pb2,(s-burnin)/(S-burnin))
+        if (s == burnin + 1) { 
+          close(pb)
+          cat('saving...\n')
+          setTxtProgressBar(pb2,(s-burnin)/(S-burnin))
+        } else setTxtProgressBar(pb2,(s-burnin)/(S-burnin))
       }
     }
   }

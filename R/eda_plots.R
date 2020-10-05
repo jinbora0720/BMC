@@ -1,4 +1,3 @@
-tic()
 # EDA plots 
 # from obesity: Figure 1
 # from neurodevelopmental disorders: Figure 2, 3, S1, S2
@@ -32,7 +31,7 @@ reshape2::melt(K_ij) %>%
                          labels=c("0","1","2-10","11-100","101-500","501-870"))) %>% 
   mutate(countfactor=factor(as.character(countfactor),levels=rev(levels(countfactor)))) %>% 
   rename(Chem = Var1, Assay = Var2) %>% 
-  ggplot() + geom_tile(aes(Assay, Chem, fill=countfactor), color="grey90", size=0.2) +
+  ggplot() + geom_tile(aes(Assay, Chem, fill=countfactor)) +
   guides(fill=guide_legend(title="Number of \nObservations")) +
   scale_fill_manual(values=c("#d53e4f","#f46d43","#fdae61","#fee08b","#e6f598","white")) +
   scale_y_reverse() + 
@@ -118,4 +117,3 @@ data.frame(res=unlist(Y[75:J]), aenm=rep(75:J, apply(End[,75:J], 2, max))) %>%
   theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(), 
         axis.title = element_text(size=20), aspect.ratio = 1/1.8) + 
   labs(y="Response", x="Assay endpoint")
-toc()

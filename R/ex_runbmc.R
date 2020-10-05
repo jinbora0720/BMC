@@ -16,23 +16,23 @@ sourceCpp("samplerBits.cpp")
 # Data #
 ########
 datalist <- readRDS("~/Documents/GitHub/BMC/data/datalist.rds")
-obese_data <- datalist$obese_data
+neuro_data <- datalist$neuro_data
 hit_vec <- datalist$hit_vec
-meta <- readRDS("obese_meta.rds")
+meta <- readRDS("neuro_meta.rds")
 meta$orgX <- lapply(meta$orgData, function(x) x[,1])
 
 ###################
 # MCMC parameters #
 ###################
-thin <- 1
-burnin <- 1
-save <- 1
+thin <- 10
+burnin <- 30000
+save <- 1000
 MCMC <- list(thin = thin, burnin = burnin, save = save)
 
 ###################
 # hyperparameters #
 ###################
-dat <- data.frame(resp = unlist(meat$Y), logc = unlist(lapply(meta$orgData, function(x) x[,1])))  
+dat <- data.frame(resp = unlist(meta$Y), logc = unlist(lapply(meta$orgData, function(x) x[,1])))  
 ddat <- dat %>% filter(logc!=0) %>% group_by(logc) %>% 
   summarise(v = sd(resp)) %>% mutate(d = 2*log(v)/logc)
 v_d <- ((max(ddat$d) - min(ddat$d))/4)^2
