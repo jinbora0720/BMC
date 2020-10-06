@@ -6,22 +6,24 @@
 library(tidyverse)
 
 # source code 
-source("simulate_data.R")
-source("dosres_plot.R")
+path <- "~/Documents/GitHub/BMC/"
+source(paste0(path, "source/simulate_data.R"))
+source(paste0(path, "source/dosres_plot.R"))
 
 # call data 
-datalist <- readRDS("~/Documents/GitHub/BMC/data/datalist.rds")
+datalist <- readRDS(paste0(path, "data/datalist.rds"))
 obese_data <- datalist$obese_data
 hit_vec <- datalist$hit_vec
-obese_out <- readRDS("obese_out1.rds")
+obese_out <- readRDS(paste0(path, "data/obese_out1.rds"))
 out <- obese_out$out
 missing_idx <- obese_out$missing_idx
-out$beta_ij.save <- c(readRDS("obese_out2.rds"), readRDS("obese_out3.rds"))
-neuro_active_aenm <- readRDS("neuro_active_aenm.rds")
-prc_res <- readRDS("obese_processed.rds")
+out$beta_ij.save <- c(readRDS(paste0(path, "data/obese_out2.rds")), 
+                      readRDS(paste0(path, "data/obese_out3.rds")))
+neuro_active_aenm <- readRDS(paste0(path, "data/neuro_active_aenm.rds"))
+prc_res <- readRDS(paste0(path, "data/obese_processed.rds"))
 
 # arrage data
-meta <- readRDS("obese_meta.rds")
+meta <- readRDS(paste0(path, "data/obese_meta.rds"))
 uniq_chnm <- meta$uniq_chnm
 m <- length(uniq_chnm)
 uniq_aenm <- meta$uniq_aenm

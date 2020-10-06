@@ -6,19 +6,20 @@ library(Rcpp)
 library(tcpl)
 
 # source code
-sourceCpp("msf.cpp")
-source("simulate_data.R")
-source("dosres_plot.R")
+path <- "~/Documents/GitHub/BMC/"
+sourceCpp(paste0(path, "source/msf.cpp"))
+source(paste0(path, "source/simulate_data.R"))
+source(paste0(path, "source/dosres_plot.R"))
 
 # call data
-res <- readRDS("sim1_BMC.rds") # BMC
-out <- readRDS("sim1_BMC_out1.rds") # BMC results 
-res0 <- readRDS("sim1_BMC0.rds") # BMC_0
-resi <- readRDS("sim1_BMCi.rds") # BMC_i
-resj <- readRDS("sim1_BMCj.rds") # BMC_j
-res_tcpl <- readRDS("sim1_tcpl.rds") # tcpl
-res_ZIPLL <- readRDS("sim1_ZIPLL.rds") # ZIPLL
-prc_res <- readRDS("sim1_processed.rds") # pre-processed posterior predictive results from BMC
+res <- readRDS(paste0(path, "data/sim1_BMC.rds")) # BMC
+out <- readRDS(paste0(path, "data/sim1_BMC_out1.rds")) # BMC results 
+res0 <- readRDS(paste0(path, "data/sim1_BMC0.rds")) # BMC_0
+resi <- readRDS(paste0(path, "data/sim1_BMCi.rds")) # BMC_i
+resj <- readRDS(paste0(path, "data/sim1_BMCj.rds")) # BMC_j
+res_tcpl <- readRDS(paste0(path, "data/sim1_tcpl.rds")) # tcpl
+res_ZIPLL <- readRDS(paste0(path, "data/sim1_ZIPLL.rds")) # ZIPLL
+prc_res <- readRDS(paste0(path, "data/sim1_processed.rds")) # pre-processed posterior predictive results from BMC
 
 # arrange data
 m <- 30; J <- 150

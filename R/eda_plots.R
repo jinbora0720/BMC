@@ -6,15 +6,16 @@
 library(tidyverse)
 
 # call data 
-datalist <- readRDS("~/Documents/GitHub/BMC/data/datalist.rds")
+path <- "~/Documents/GitHub/BMC/"
+datalist <- readRDS(paste0(path, "data/datalist.rds"))
 neuro_data <- datalist$neuro_data
 obese_data <- datalist$obese_data
 
 # arrage data
-obese_meta <- readRDS("obese_meta.rds")
+obese_meta <- readRDS(paste0(path, "data/obese_meta.rds"))
 K_ij <- obese_meta$K_ij
 
-neuro_meta <- readRDS("neuro_meta.rds")
+neuro_meta <- readRDS(paste0(path, "data/neuro_meta.rds"))
 uniq_chnm <- neuro_meta$uniq_chnm
 uniq_aenm <- neuro_meta$uniq_aenm
 J <- length(uniq_aenm)

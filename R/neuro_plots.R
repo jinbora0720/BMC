@@ -6,19 +6,20 @@
 library(tidyverse)
 
 # source code 
-source("simulate_data.R")
+path <- "~/Documents/GitHub/BMC/"
+source(paste0(path, "source/simulate_data.R"))
 
 # call data 
-datalist <- readRDS("~/Documents/GitHub/BMC/data/datalist.rds")
+datalist <- readRDS(paste0(path, "data/datalist.rds"))
 neuro_data <- datalist$neuro_data
 hit_vec <- datalist$hit_vec
-neuro_out <- readRDS("neuro_out.rds")
+neuro_out <- readRDS(paste0(path, "data/neuro_out.rds"))
 out <- neuro_out$out
 missing_idx <- neuro_out$missing_idx
-obese_active_aenm <- readRDS("obese_active_aenm.rds")
+obese_active_aenm <- readRDS(paste0(path, "data/obese_active_aenm.rds"))
 
 # arrage data
-meta <- readRDS("neuro_meta.rds")
+meta <- readRDS(paste0(path, "data/neuro_meta.rds"))
 uniq_chnm <- meta$uniq_chnm
 m <- length(uniq_chnm)
 uniq_aenm <- meta$uniq_aenm
@@ -102,3 +103,4 @@ data.frame(act = colMeans(actprob[which(uniq_chnm %in% neuro_ascend_chnm[c(24,27
         legend.text = element_text(size=15), 
         axis.title = element_text(size=15), 
         plot.title = element_text(size=20)) 
+
