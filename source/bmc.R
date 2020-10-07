@@ -196,7 +196,7 @@ bmc <- function(Data = list(), MCMC = list(thin=1, burnin=0, save=1000),
   ## Sigj:
   if (is.null(invSigj)) {
     if (is.null(init$invSigj)) {
-      invSigj = rWishart(1, df = a, Sigma = solve(R))
+      invSigj = rWishart(1, df = a, Sigma = solve(R))[,,1]
     } else {
       invSigj = init$invSigj
     }

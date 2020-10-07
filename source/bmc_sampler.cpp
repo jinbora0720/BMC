@@ -3,6 +3,16 @@
 using namespace Rcpp;
 // [[Rcpp::depends(RcppArmadillo)]]
 
+// This is a simple example of exporting a C++ function to R. You can
+// source this function into an R session using the Rcpp::sourceCpp 
+// function (or via the Source button on the editor toolbar). Learn
+// more about Rcpp at:
+//
+//   http://www.rcpp.org/
+//   http://adv-r.had.co.nz/Rcpp.html
+//   http://gallery.rcpp.org/
+//
+
 // [[Rcpp::export]]
 Rcpp::List ProdRes(const List& Y, const List& X, const List& beta_ij,
                    IntegerMatrix Start, IntegerMatrix End, IntegerVector m_j) {
@@ -178,7 +188,7 @@ Rcpp::List gbcpp_post(const List& Y, const List& X,
       if (gamma[0] == 1) {
         arma::vec mu = invV*mu0;
         arma::mat Z = arma::randn(p,1);
-        betajmat.submat(0,i,p-1,i) = mu + arma::chol(arma::symmatu(invV)+0.005*arma::eye(p,p),"lower")*Z; // only difference from bmc_sampler.cpp (added not to break Cholesky decomposition)
+        betajmat.submat(0,i,p-1,i) = mu + arma::chol(arma::symmatu(invV),"lower")*Z;
       } else {
         betajmat.submat(0,i,p-1,i) = arma::zeros(p);
       }
@@ -190,4 +200,51 @@ Rcpp::List gbcpp_post(const List& Y, const List& X,
   out["beta_ij"] = beta_ij;
   out["gamma_ij"] = gamma_ij;
   return out;
+}
+
+// temporary
+// [[Rcpp::export]]
+Rcpp::List bcpp_post(const List& Y, const List& X,
+                     const arma::mat& gamma_ij, const arma::mat& invSigj, const arma::mat& Sigj, const arma::vec& sigj_sq,
+                     const List& idx_j, IntegerVector m_j, IntegerMatrix Start, IntegerMatrix End) {
+  int J = gamma_ij.n_cols;
+  int p;
+  arma::vec Yvec;
+  arma::mat Xmat;
+  arma::vec idxj;
+  arma::vec iSigvec;
+  arma::vec Sigvec;
+  List beta_ij(J);
+  arma::mat betajmat;
+  arma::colvec dum;
+  
+  for (int j = 0; j < J; j++) {
+    Yvec = as<arma::vec>(Y[j]);
+    Xmat = as<arma::mat>(X[j]);
+    p = Xmat.n_cols;
+    idxj = as<arma::vec>(idx_j[j]);
+    iSigvec = invSigj.submat(0,j,p*p-1,j);
+    Sigvec = Sigj.submat(0,j,p*p-1,j);
+    betajmat = arma::mat(p,m_j[j]);
+    dum = arma::colvec(p);
+    
+    for (int i = 0; i < m_j[j]; i++) {
+      arma::mat invV = pinv(reshape(iSigvec,p,p) + Xmat.submat(Start(i,j)-1,0,End(i,j)-1,p-1).t()*
+        (arma::eye(End(i,j)-Start(i,j)+1,End(i,j)-Start(i,j)+1)/sigj_sq[j])*
+        Xmat.submat(Start(i,j)-1,0,End(i,j)-1,p-1));
+      arma::vec mu0 = (Xmat.submat(Start(i,j)-1,0,End(i,j)-1,p-1).t() *
+        Yvec.subvec(Start(i,j)-1,End(i,j)-1)) % dum.fill(1/sigj_sq[j]);
+      
+      if (gamma_ij(idxj[i]-1,j) == 1) {
+        arma::vec mu = invV*mu0;
+        arma::mat Z = arma::randn(p,1);
+        betajmat.submat(0,i,p-1,i) = mu + arma::chol(arma::symmatu(invV),"lower")*Z;
+      } else {
+        betajmat.submat(0,i,p-1,i) = arma::zeros(p);
+      }
+    }
+    beta_ij[j] = betajmat;
+  }
+  
+  return beta_ij;
 }

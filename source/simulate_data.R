@@ -1,8 +1,5 @@
 # Functions to create simulated datasets 
 
-# dependencies
-library(splines)
-
 simulate_lambda = function(m, q, df=3, ad1=2.1, ad2=3.1) {
   # m: number of chemicals 
   # q: number of factors 
@@ -94,7 +91,7 @@ generate_data = function(m, J, d=1, seed) {
   
   # Data
   logc = rep(c(0.301, 0.477, 0.602, 0.845, 1.000, 1.301, 1.602, 2.000), d)
-  Xtemp = apply(bs(logc, df=p, intercept=TRUE), 2, function(x) scale(x, center=TRUE, scale=FALSE)) # centred version
+  Xtemp = apply(bs(logc, df=p, intercept=TRUE), 2, function(x) scale(x, center=TRUE, scale=FALSE)) 
   
   orgData = rxf = list()
   for (j in 1:J) {

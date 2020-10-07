@@ -1,4 +1,4 @@
-# Simulation 2
+# Simulation 1
 
 # dependencies 
 library(MASS)
@@ -17,53 +17,31 @@ source(paste0(path, "source/bmc.R"))
 source(paste0(path, "source/bmc_sampler.R"))
 sourceCpp(paste0(path, "source/bmc_sampler.cpp"))
 sourceCpp(paste0(path, "source/samplerBits.cpp"))
-source(paste0(path, "source/simdata.R"))
 source(paste0(path, "source/simulate_data.R"))
 
 ########
 # Data #
 ########
-m <- 15
-J <- 15
+m <- 30
+J <- 150
 
 set.seed(123)
-seedsave <- sample(10000, 100, replace=FALSE)
-iterpool <- c(1,2,3,4,5,6,9,10,
-              11,13,15,16,17,18,19,20, 
-              21,23,24,25,26,27,28,29,30,
-              31,32,33,34,35,36,37,38, 
-              41,43,44,45,46,47,48,49,50,
-              51,52,53,54,58,59,60,
-              61)
-
-# hold out bottom right 3 x 3 cells 
-missing_idx <- rbind(c(13,13), c(13,14), c(13,15),
-                     c(14,13), c(14,14), c(14,15),
-                     c(15,13), c(15,14), c(15,15))
-test_idx <- apply(missing_idx, 1, function(x) x[2]+J*(x[1]-1))
-missing_idx_ij <- apply(missing_idx, 1, function(x) x[1] + m*(x[2]-1))
-simout <- simdata(nchem = m, nassay = J, seed = 123)
-ZIPLL_missing <- NULL
-for (s in 1:nrow(missing_idx)) {
-  i <- missing_idx[s,1]
-  j <- missing_idx[s,2]
-  ZIPLL_missing <- c(ZIPLL_missing, which(simout$dat[,1]==i & simout$dat[,2]==j))
-}
+seedsave <- sample(10000, 50, replace=FALSE)
 
 #################
 # Store results #
 #################
-rmse = tr_aucg = tt_aucg <- rep(NA, 50)
-rmse0 = tr_aucg0 = tt_aucg0 <- rep(NA, 50)
-rmsei = tr_aucgi = tt_aucgi <- rep(NA, 50)
-rmsej = tr_aucgj = tt_aucgj <- rep(NA, 50)
+rmse = tr_aucg = tt_aucg = tr_auct = tt_auct <- rep(NA, 50)
+rmse0 = tr_aucg0 = tt_aucg0 = tr_auct0 = tt_auct0 <- rep(NA, 50)
+rmsei = tr_aucgi = tt_aucgi = tr_aucti = tt_aucti <- rep(NA, 50)
+rmsej = tr_aucgj = tt_aucgj = tr_auctj = tt_auctj <- rep(NA, 50)
 rmse_tcpl = tr_aucg_tcpl <- rep(NA, 50)
 rmse_ZIPLL = tr_aucg_ZIPLL <- rep(NA, 50)
 
 ###################
 # MCMC parameters #
 ###################
-thin <- 1
+thin <- 10
 burnin <- 10000
 save <- 1000
 MCMC <- list(thin = thin, burnin = burnin, save = save)
@@ -73,63 +51,28 @@ MCMC <- list(thin = thin, burnin = burnin, save = save)
 ###############
 pb <- txtProgressBar(style=3,width=50)
 for (iter in 1:50) {
-  seed = seedsave[iterpool[iter]]
-  simout = simdata(nchem=m, nassay=J, seed)
-  dat = simout$dat
-  truth = simout$truth
+  seed = seedsave[iter]
+  gendata = generate_data(nchem=m, nassay=J, d=3, seed)
+  simdata = gendata$simdata
+  truth = gendata$truth
   
-  tt_gamma = truth$gamma_ij[test_idx]
-  tr_gamma = truth$gamma_ij[-test_idx]
-  
-  Y = orgX = idx_j = list()
-  m_j = rep(NA, J)
-  for (j in 1:J) {
-    these = (dat[,2]==j)
-    Y[[j]] = dat[these,4]
-    orgX[[j]] = dat[these,3]
-    idx_j[[j]] = unique(dat[these,1])
-    m_j[j] = length(idx_j[[j]])
-  }
-  
-  K_ij = matrix(8, m, J)   
-  for (j in 1:J) {
-    K_ij[-idx_j[[j]], j] = 0
-  }
-  
-  Start = End = matrix(0, m, J)
-  for (j in 1:J) {
-    Start[1:m_j[j],j] = cumsum(c(1,K_ij[,j]))[idx_j[[j]]]
-    End[1:m_j[j],j] = cumsum(K_ij[,j])[idx_j[[j]]]
-  }
-  
-  p = 7
-  X = list() 
-  for (j in 1:J) {
-    X[[j]] = matrix(NA, max(End[,j]), p)
-    for (i in 1:m_j[j]) {
-      logc = orgX[[j]][Start[i,j]:End[i,j]] 
-      X[[j]][Start[i,j]:End[i,j],] = apply(bs(logc, df=p, intercept=TRUE), 2, 
-                                           function(x) scale(x, center=TRUE, scale=FALSE))
-    }
-  }
-  
-  simuldata = list(X = X, orgX = orgX, orgY = Y, K_ij = K_ij, 
-                   m_j = m_j, idx_j = idx_j, Start = Start, End = End)
-  
-  misdata = data_missing(simdata = simuldata, missing_idx = missing_idx, seed = seed)
-  names(misdata)[5] <- "Y"
+  prob_missing = 0.03
+  misdata = data_missing(simdata, prob_missing, missing_idx=NULL, seed=seed)
+  missing_idx = misdata$missing_idx 
+  missing_idx_col = misdata$missing_idx_col 
   
   X = misdata$X
-  Y = misdata$Y
   orgX = misdata$orgX
-  Start = misdata$Start
-  End = misdata$End 
-  idx_j = misdata$idx_j
+  Y = misdata$orgY
   m_j = misdata$m_j
+  idx_j = misdata$idx_j
+  Start = misdata$Start
+  End = misdata$End
   
   #########
   # hyper #
   #########
+  p = 7
   a = p+2
   Sigj = sapply(1:J, function(j) {
     covtemp = sapply(1:m_j[j], function(i) {
@@ -142,7 +85,8 @@ for (iter in 1:50) {
   Sigj[,colSums(Sigj)==0] = rowSums(Sigj)/(J-sum(colSums(Sigj)==0))
   invSigj = apply(Sigj, 2, function(x) c(ginv(matrix(x, p, p))))
   R = matrix((a-p-1)*rowMeans(Sigj, na.rm=TRUE), p, p)
-  hyper = list(a = a, R = R)
+  v_d = var(unlist(Y))
+  hyper = list(a = a, R = R, v_d = v_d)
   
   ##################
   # initial values #
@@ -159,17 +103,30 @@ for (iter in 1:50) {
   # bmc # 
   #######
   out <- bmc(Data = misdata, MCMC = MCMC, hyper = hyper, init = init, 
-             hetero = FALSE, adapt = FALSE, simpler = FALSE, verbose = FALSE)
+             hetero = TRUE, adapt = FALSE, simpler = FALSE, verbose = FALSE)
   
-  beta_ij.postm = lapply(out$beta_ij.save, function(x) rowMeans(x,dim=2))
-  Fit.postm = lapply(1:J, function(j) {
-    sapply(1:m_j[j], function(i) {
-      X[[j]][Start[i,j]:End[i,j],]%*%beta_ij.postm[[j]][,i]
-    })
+  Yhat.save = lapply(1:J, function(j) {
+    sapply(1:save, function(s) {
+      lapply(1:m_j[j], function(i) {
+        (X[[j]][Start[i,j]:End[i,j],]%*%out$beta_ij.save[[j]][,i,s])/
+          exp(orgX[[j]][Start[i,j]:End[i,j]]*out$d_ij.save[idx_j[[j]][i],j,s]/2)
+      }) %>% unlist() 
+    }) 
   })
+  Yhat.postm = lapply(Yhat.save, rowMeans)
+  
+  Ytil.save = lapply(1:J, function(j) {
+    sapply(1:save, function(s) {
+      lapply(1:m_j[j], function(i) {
+        Y[[j]][Start[i,j]:End[i,j]]/
+          exp(orgX[[j]][Start[i,j]:End[i,j]]*out$d_ij.save[idx_j[[j]][i],j,s]/2)
+      }) %>% unlist() 
+    }) 
+  })
+  res.postm = lapply(mapply('-', Ytil.save, Yhat.save, SIMPLIFY = FALSE), rowMeans)
   
   ## 1. overall RMSE
-  rmse[iter] = sqrt(mean(unlist(mapply('-', Y, Fit.postm))^2))
+  rmse = sqrt(mean(unlist(res.postm)^2))
   
   ## 2. AUC for gamma 
   gamma_ij.save = out$gamma_ij.save 
@@ -177,20 +134,27 @@ for (iter in 1:50) {
   gamma_ij.save[is.na(gamma_ij.save)] = sapply(z.save, function(x) x[missing_idx]>0)
   gamma_ij.postm = rowMeans(gamma_ij.save, dim=2, na.rm=TRUE)
   
-  tr_pred = prediction(as.numeric(t(gamma_ij.postm))[-test_idx], tr_gamma)
+  ### check from here
+  tr_pred = prediction(as.numeric(gamma_ij.postm)[-missing_idx_col], as.numeric(truth$gamma_ij)[-missing_idx_col])
   tr_rocs = performance(tr_pred, measure = "auc")
-  tr_aucg[iter] = tr_rocs@y.values[[1]]
+  tr_aucg = tr_rocs@y.values[[1]]
   
-  ## 4. AUC for predicted gamma 
-  tt_pred = prediction(as.numeric(t(gamma_ij.postm))[test_idx], tt_gamma)
+  ## 3. AUC for predicted gamma 
+  tt_pred = prediction(as.numeric(gamma_ij.postm[missing_idx]), as.numeric(truth$gamma_ij[missing_idx]))
   tt_rocs = performance(tt_pred, measure = "auc")
-  tt_aucg[iter] = tt_rocs@y.values[[1]]
+  tt_aucg = tt_rocs@y.values[[1]]
+  
+  ## 4. AUC for t_ij
+  t_ij.postm = rowMeans(out$t_ij.save, dims=2)
+  pred_t = prediction(as.numeric(t_ij.postm)[-missing_idx_col], as.numeric(truth$t_ij)[-missing_idx_col])
+  rocs_t = performance(pred_t, measure = "auc")
+  auct = rocs_t@y.values[[1]]
   
   ########
   # bmc0 # 
   ########
   out0 <- bmc(Data = misdata, MCMC = MCMC, hyper = hyper, init = init, 
-             hetero = FALSE, adapt = FALSE, simpler = "bmc0", verbose = FALSE)
+              hetero = FALSE, adapt = FALSE, simpler = "bmc0", verbose = FALSE)
   
   beta_ij.postm0 = lapply(out0$beta_ij.save, function(x) rowMeans(x,dim=2))
   Fit.postm0 = lapply(1:J, function(j) {
@@ -220,7 +184,7 @@ for (iter in 1:50) {
   # bmci # 
   ########
   outi <- bmc(Data = misdata, MCMC = MCMC, hyper = hyper, init = init, 
-             hetero = FALSE, adapt = FALSE, simpler = "bmci", verbose = FALSE)
+              hetero = FALSE, adapt = FALSE, simpler = "bmci", verbose = FALSE)
   
   beta_ij.postmi = lapply(outi$beta_ij.save, function(x) rowMeans(x,dim=2))
   Fit.postmi = lapply(1:J, function(j) {
@@ -250,7 +214,7 @@ for (iter in 1:50) {
   # bmcj # 
   ########
   outj <- bmc(Data = misdata, MCMC = MCMC, hyper = hyper, init = init, 
-             hetero = FALSE, adapt = FALSE, simpler = "bmcj", verbose = FALSE)
+              hetero = FALSE, adapt = FALSE, simpler = "bmcj", verbose = FALSE)
   
   beta_ij.postmj = lapply(outj$beta_ij.save, function(x) rowMeans(x,dim=2))
   Fit.postmj = lapply(1:J, function(j) {

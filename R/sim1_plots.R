@@ -4,6 +4,7 @@
 library(tidyverse)
 library(Rcpp)
 library(tcpl)
+library(splines)
 
 # source code
 path <- "~/Documents/GitHub/BMC/"

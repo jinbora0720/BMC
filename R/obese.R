@@ -21,7 +21,7 @@ source(paste0(path, "source/simulate_data.R"))
 datalist <- readRDS(paste0(path, "data/datalist.rds"))
 obese_data <- datalist$obese_data
 hit_vec <- datalist$hit_vec
-meta <- metadata(neuro_data)
+meta <- metadata(obese_data)
 uniq_chnm <- meta$uniq_chnm
 m <- length(uniq_chnm)
 uniq_aenm <- meta$uniq_aenm
@@ -36,6 +36,7 @@ pred_idx <- readRDS(paste0(path, "data/obese_pred_idx.rds"))
 prob_missing <- 0.03
 set.seed(330); missing_idx <- pred_idx[sample(nrow(pred_idx), prob_missing*m*J),]
 misdata <- data_missing(simdata = simdata, missing_idx = missing_idx, seed = 330)
+names(misdata)[5] <- "Y"
 
 ###################
 # MCMC parameters #
