@@ -291,9 +291,9 @@ iter <- taskID <- as.integer(Sys.getenv('SLURM_ARRAY_TASK_ID'))
 ################
   out_name <- paste0(path, "data/sim1_res_", iter, ".rds")
   saveRDS(list(rmse = rmse, tr_aucg = tr_aucg, tt_aucg = tt_aucg, tr_auct = tr_auct,
-               rmse = rmse0, tr_aucg = tr_aucg0, tt_aucg = tt_aucg0, tr_auct = tr_auct0,
-               rmse = rmsei, tr_aucg = tr_aucgi, tt_aucg = tt_aucgi, tr_auct = tr_aucti,
-               rmse = rmsej, tr_aucg = tr_aucgj, tt_aucg = tt_aucgj, tr_auct = tr_auctj,
+               rmse0 = rmse0, tr_aucg0 = tr_aucg0, tt_aucg0 = tt_aucg0, tr_auct0 = tr_auct0,
+               rmsei = rmsei, tr_aucgi = tr_aucgi, tt_aucgi = tt_aucgi, tr_aucti = tr_aucti,
+               rmsej = rmsej, tr_aucgj = tr_aucgj, tt_aucgj = tt_aucgj, tr_auctj = tr_auctj,
                seed = seed, out = out), file.path(out_name))
 
 
