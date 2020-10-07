@@ -15,7 +15,7 @@ library(ZIPLL)
 path <- "~/Documents/GitHub/BMC/"
 source(paste0(path, "source/bmc.R"))
 source(paste0(path, "source/bmc_sampler.R"))
-sourceCpp(paste0(path, "source/bmc_sampler.cpp"))
+sourceCpp(paste0(path, "source/bmc_sampler2.cpp"))
 sourceCpp(paste0(path, "source/samplerBits.cpp"))
 source(paste0(path, "source/simdata.R"))
 source(paste0(path, "source/simulate_data.R"))
@@ -181,7 +181,7 @@ for (iter in 1:50) {
   tr_rocs = performance(tr_pred, measure = "auc")
   tr_aucg[iter] = tr_rocs@y.values[[1]]
   
-  ## 4. AUC for predicted gamma 
+  ## 3. AUC for predicted gamma 
   tt_pred = prediction(as.numeric(t(gamma_ij.postm))[test_idx], tt_gamma)
   tt_rocs = performance(tt_pred, measure = "auc")
   tt_aucg[iter] = tt_rocs@y.values[[1]]
@@ -211,7 +211,7 @@ for (iter in 1:50) {
   tr_rocs0 = performance(tr_pred0, measure = "auc")
   tr_aucg0[iter] = tr_rocs0@y.values[[1]]
   
-  ## 4. AUC for predicted gamma 
+  ## 3. AUC for predicted gamma 
   tt_pred0 = prediction(as.numeric(t(gamma_ij.postm0))[test_idx], tt_gamma)
   tt_rocs0 = performance(tt_pred0, measure = "auc")
   tt_aucg0[iter] = tt_rocs0@y.values[[1]]
@@ -241,7 +241,7 @@ for (iter in 1:50) {
   tr_rocsi = performance(tr_predi, measure = "auc")
   tr_aucgi[iter] = tr_rocsi@y.values[[1]]
   
-  ## 4. AUC for predicted gamma 
+  ## 3. AUC for predicted gamma 
   tt_predi = prediction(as.numeric(t(gamma_ij.postmi))[test_idx], tt_gamma)
   tt_rocsi = performance(tt_predi, measure = "auc")
   tt_aucgi[iter] = tt_rocsi@y.values[[1]]
@@ -271,7 +271,7 @@ for (iter in 1:50) {
   tr_rocsj = performance(tr_predj, measure = "auc")
   tr_aucgj[iter] = tr_rocsj@y.values[[1]]
   
-  ## 4. AUC for predicted gamma 
+  ## 3. AUC for predicted gamma 
   tt_predj = prediction(as.numeric(t(gamma_ij.postmj))[test_idx], tt_gamma)
   tt_rocsj = performance(tt_predj, measure = "auc")
   tt_aucgj[iter] = tt_rocsj@y.values[[1]]

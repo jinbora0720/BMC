@@ -6,13 +6,9 @@ library(Rcpp)
 library(tidyverse) 
 library(splines) 
 library(ROCR)
-library(tcpl)
-# library(devtools)
-# devtools::install_github("AnderWilson/ZIPLL")
-library(ZIPLL)
 
 # source code
-path <- "~/Documents/GitHub/BMC/"
+path <- "/work/bj91/BMC/"
 source(paste0(path, "source/bmc.R"))
 source(paste0(path, "source/bmc_sampler.R"))
 sourceCpp(paste0(path, "source/bmc_sampler2.cpp"))
@@ -28,16 +24,6 @@ J <- 150
 set.seed(123)
 seedsave <- sample(10000, 50, replace=FALSE)
 
-#################
-# Store results #
-#################
-rmse = tr_aucg = tt_aucg = tr_auct <- rep(NA, 50)
-rmse0 = tr_aucg0 = tt_aucg0 = tr_auct0 <- rep(NA, 50)
-rmsei = tr_aucgi = tt_aucgi = tr_aucti <- rep(NA, 50)
-rmsej = tr_aucgj = tt_aucgj = tr_auctj <- rep(NA, 50)
-rmse_tcpl = tr_aucg_tcpl <- rep(NA, 50)
-rmse_ZIPLL = tr_aucg_ZIPLL <- rep(NA, 50)
-
 ###################
 # MCMC parameters #
 ###################
@@ -46,11 +32,9 @@ burnin <- 10000
 save <- 1000
 MCMC <- list(thin = thin, burnin = burnin, save = save)
 
-###############
-# Simulations #
-###############
-pb <- txtProgressBar(style=3,width=50)
-for (iter in 1:50) {
+# parallelising
+iter <- taskID <- as.integer(Sys.getenv('SLURM_ARRAY_TASK_ID'))
+
   seed = seedsave[iter]
   gendata = generate_data(m, J, d=3, seed)
   simdata = gendata$simdata
@@ -132,7 +116,7 @@ for (iter in 1:50) {
   res.postm = lapply(mapply('-', Ytil.save, Yhat.save, SIMPLIFY = FALSE), rowMeans)
   
   ## 1. overall RMSE
-  rmse[iter] = sqrt(mean(unlist(res.postm)^2))
+  rmse = sqrt(mean(unlist(res.postm)^2))
   
   ## 2. AUC for gamma 
   gamma_ij.save = out$gamma_ij.save 
@@ -142,18 +126,18 @@ for (iter in 1:50) {
   
   tr_pred = prediction(as.numeric(gamma_ij.postm)[-missing_idx_col], tr_gamma)
   tr_rocs = performance(tr_pred, measure = "auc")
-  tr_aucg[iter] = tr_rocs@y.values[[1]]
+  tr_aucg = tr_rocs@y.values[[1]]
   
   ## 3. AUC for predicted gamma 
   tt_pred = prediction(as.numeric(gamma_ij.postm[missing_idx]), tt_gamma)
   tt_rocs = performance(tt_pred, measure = "auc")
-  tt_aucg[iter] = tt_rocs@y.values[[1]]
+  tt_aucg = tt_rocs@y.values[[1]]
   
   ## 4. AUC for t_ij
   t_ij.postm = rowMeans(out$t_ij.save, dims=2)
   pred_t = prediction(as.numeric(t_ij.postm)[-missing_idx_col], tr_t)
   rocs_t = performance(pred_t, measure = "auc")
-  tr_auct[iter] = rocs_t@y.values[[1]]
+  tr_auct = rocs_t@y.values[[1]]
   
   ########
   # bmc0 # 
@@ -182,7 +166,7 @@ for (iter in 1:50) {
   res.postm0 = lapply(mapply('-', Ytil.save0, Yhat.save0, SIMPLIFY = FALSE), rowMeans)
   
   ## 1. overall RMSE
-  rmse0[iter] = sqrt(mean(unlist(res.postm0)^2))
+  rmse0 = sqrt(mean(unlist(res.postm0)^2))
   
   ## 2. AUC for gamma
   gamma_ij.save0 = out0$gamma_ij.save
@@ -191,18 +175,18 @@ for (iter in 1:50) {
   
   tr_pred0 = prediction(as.numeric(gamma_ij.postm0)[-missing_idx_col], tr_gamma)
   tr_rocs0 = performance(tr_pred0, measure = "auc")
-  tr_aucg0[iter] = tr_rocs0@y.values[[1]]
+  tr_aucg0 = tr_rocs0@y.values[[1]]
   
   ## 3. AUC for predicted gamma
   tt_pred0 = prediction(as.numeric(gamma_ij.postm0[missing_idx]), tt_gamma)
   tt_rocs0 = performance(tt_pred0, measure = "auc")
-  tt_aucg0[iter] = tt_rocs0@y.values[[1]]
+  tt_aucg0 = tt_rocs0@y.values[[1]]
   
   ## 4. AUC for t_ij
   t_ij.postm0 = rowMeans(out0$t_ij.save, dims=2)
   pred_t0 = prediction(as.numeric(t_ij.postm0)[-missing_idx_col], tr_t)
   rocs_t0 = performance(pred_t0, measure = "auc")
-  tr_auct0[iter] = rocs_t0@y.values[[1]]
+  tr_auct0 = rocs_t0@y.values[[1]]
   
   ########
   # bmci # 
@@ -231,7 +215,7 @@ for (iter in 1:50) {
   res.postmi = lapply(mapply('-', Ytil.savei, Yhat.savei, SIMPLIFY = FALSE), rowMeans)
   
   ## 1. overall RMSE
-  rmsei[iter] = sqrt(mean(unlist(res.postmi)^2))
+  rmsei = sqrt(mean(unlist(res.postmi)^2))
   
   ## 2. AUC for gamma
   gamma_ij.savei = outi$gamma_ij.save
@@ -240,18 +224,18 @@ for (iter in 1:50) {
   
   tr_predi = prediction(as.numeric(gamma_ij.postmi)[-missing_idx_col], tr_gamma)
   tr_rocsi = performance(tr_predi, measure = "auc")
-  tr_aucgi[iter] = tr_rocsi@y.values[[1]]
+  tr_aucgi = tr_rocsi@y.values[[1]]
   
   ## 3. AUC for predicted gamma
   tt_predi = prediction(as.numeric(gamma_ij.postmi[missing_idx]), tt_gamma)
   tt_rocsi = performance(tt_predi, measure = "auc")
-  tt_aucgi[iter] = tt_rocsi@y.values[[1]]
+  tt_aucgi = tt_rocsi@y.values[[1]]
   
   ## 4. AUC for t_ij
   t_ij.postmi = rowMeans(outi$t_ij.save, dims=2)
   pred_ti = prediction(as.numeric(t_ij.postmi)[-missing_idx_col], tr_t)
   rocs_ti = performance(pred_ti, measure = "auc")
-  tr_aucti[iter] = rocs_ti@y.values[[1]]
+  tr_aucti = rocs_ti@y.values[[1]]
   
   ########
   # bmcj # 
@@ -280,8 +264,8 @@ for (iter in 1:50) {
   res.postmj = lapply(mapply('-', Ytil.savej, Yhat.savej, SIMPLIFY = FALSE), rowMeans)
   
   ## 1. overall RMSE
-  rmsej[iter] = sqrt(mean(unlist(res.postmj)^2))
-  
+  rmsej = sqrt(mean(unlist(res.postmj)^2))
+
   ## 2. AUC for gamma
   gamma_ij.savej = outj$gamma_ij.save
   gamma_ij.savej[is.na(gamma_ij.savej)] = sapply(1:save, function(s) rbinom(nrow(missing_idx), 1, outj$pi_ij.save[,,s][missing_idx]))
@@ -289,103 +273,28 @@ for (iter in 1:50) {
   
   tr_predj = prediction(as.numeric(gamma_ij.postmj)[-missing_idx_col], tr_gamma)
   tr_rocsj = performance(tr_predj, measure = "auc")
-  tr_aucgj[iter] = tr_rocsj@y.values[[1]]
+  tr_aucgj = tr_rocsj@y.values[[1]]
   
   ## 3. AUC for predicted gamma
   tt_predj = prediction(as.numeric(gamma_ij.postmj[missing_idx]), tt_gamma)
   tt_rocsj = performance(tt_predj, measure = "auc")
-  tt_aucgj[iter] = tt_rocsj@y.values[[1]]
+  tt_aucgj = tt_rocsj@y.values[[1]]
   
   ## 4. AUC for t_ij
   t_ij.postmj = rowMeans(outj$t_ij.save, dims=2)
   pred_tj = prediction(as.numeric(t_ij.postmj)[-missing_idx_col], tr_t)
   rocs_tj = performance(pred_tj, measure = "auc")
-  tr_auctj[iter] = rocs_tj@y.values[[1]]
-  
-  ########
-  # tcpl #
-  ########
-  rmse_TCPL = hitc = matrix(NA, m, J)
-  for (j in 1:J) {
-    for (i in 1:m_j[j]) {
-      params <- tcplFit(logc = orgX[[j]][Start[i,j]:End[i,j]],
-                        resp = Y[[j]][Start[i,j]:End[i,j]],
-                        bmad = (median(Y[[j]]) + sd(Y[[j]]))/3, bidirectional=TRUE)
-      rmse_TCPL[idx_j[[j]][i],j] = c(params$cnst_rmse, params$hill_rmse, params$gnls_rmse)[which.min(c(params$cnst_aic, params$hill_aic, params$gnls_aic))]
-      hitc[idx_j[[j]][i],j] = ifelse(which.min(c(params$cnst_aic, params$hill_aic, params$gnls_aic))==1, 0, 1)
-    }
-  }
-  
-  ## 1. overall RMSE 
-  rmse_tcpl[iter] = mean(rmse_TCPL, na.rm=TRUE)
-  
-  ## 2. AUC for gamma
-  tr_pred_tcpl = prediction(as.numeric(hitc)[-missing_idx_col], tr_gamma)
-  tr_rocs_tcpl = performance(tr_pred_tcpl, measure = "auc")
-  tr_aucg_tcpl[iter] = tr_rocs_tcpl@y.values[[1]]
-  
-  #########
-  # ZIPLL #
-  #########
-  # formulate data
-  dat <- NULL
-  for(i in 1:m){
-    for (j in 1:J) {
-      dat <- rbind(dat,cbind(i,j,simdata$orgX[[j]][simdata$Start[i,j]:simdata$End[i,j]],
-                             simdata$orgY[[j]][simdata$Start[i,j]:simdata$End[i,j]]))
-    }
-  }
-  
-  # missing index
-  ZIPLL_missing = NULL
-  for (s in 1:nrow(missing_idx)) {
-    i = missing_idx[s,1]; j = missing_idx[s,2]
-    ZIPLL_missing = c(ZIPLL_missing, which(dat[,1]==i & dat[,2]==j))
-  }
-  
-  # fit ZIPLL
-  fit <- ZIPLL(dat, nitter=burnin+thin*save, burnin=burnin)
-  
-  ## 1. overall RMSE 
-  rmse_ZIPLL[iter] = sqrt(mean((fit$dat[-ZIPLL_missing,4] - fit$dat[-ZIPLL_missing,5])^2, na.rm=TRUE))
-  
-  ## 2. AUC for train gamma 
-  tr_pred_ZIPLL = prediction(fit$parms[,7][-test_idx], as.numeric(t(truth$gamma_ij))[-test_idx])
-  tr_rocs_ZIPLL = performance(tr_pred_ZIPLL, measure = "auc")
-  tr_aucg_ZIPLL[iter] = tr_rocs_ZIPLL@y.values[[1]]
-  
-  setTxtProgressBar(pb, iter/50) 
-}
-close(pb)
+  tr_auctj = rocs_tj@y.values[[1]]
 
 ################
 # Save results #
 ################
-res <- list(rmse = rmse, tr_aucg = tr_aucg, tt_aucg = tt_aucg, tr_auct = tr_auct, 
-            seedsave = seedsave)
-res0 <- list(rmse = rmse0, tr_aucg = tr_aucg0, tt_aucg = tt_aucg0, tr_auct = tr_auct0,  
-             seedsave = seedsave)
-resi <- list(rmse = rmsei, tr_aucg = tr_aucgi, tt_aucg = tt_aucgi, tr_auct = tr_aucti,  
-             seedsave = seedsave)
-resj <- list(rmse = rmsej, tr_aucg = tr_aucgj, tt_aucg = tt_aucgj, tr_auct = tr_auctj,  
-             seedsave = seedsave)
-res_tcpl <- list(rmse = rmse_tcpl, tr_aucg = tr_aucg_tcpl, seedsave = seedsave)
-res_ZIPLL <- list(rmse = rmse_ZIPLL, tr_aucg = tr_aucg_ZIPLL, seedsave = seedsave)
-
-saveRDS(res, file.path(path, "data/sim1_BMC.rds"))
-saveRDS(list(gamma_ij.save = out$gamma_ij.save, 
-             Lambda.save = out$Lambda.save, 
-             eta.save = out$eta.save, 
-             covMean = out$covMean, 
-             t_ij.save = out$t_ij.save, 
-             d_ij.save = out$d_ij.save), file.path(path, "data/sim1_BMC_out1.rds"))
-saveRDS(out$beta_ij.save[c(1:75)], file.path(path, "data/sim1_BMC_out2.rds"))
-saveRDS(out$beta_ij.save[c(76:150)], file.path(path, "data/sim1_BMC_out3.rds"))
-saveRDS(res0, file.path(path, "data/sim1_BMC0.rds"))
-saveRDS(resi, file.path(path, "data/sim1_BMCi.rds"))
-saveRDS(resj, file.path(path, "data/sim1_BMCj.rds"))
-saveRDS(res_tcpl, file.path(path, "data/sim1_tcpl.rds"))
-saveRDS(res_ZIPLL, file.path(path, "data/sim1_ZIPLL.rds"))
+  out_name <- paste0(path, "data/sim1_res_", iter, ".rds")
+  saveRDS(list(rmse = rmse, tr_aucg = tr_aucg, tt_aucg = tt_aucg, tr_auct = tr_auct,
+               rmse = rmse0, tr_aucg = tr_aucg0, tt_aucg = tt_aucg0, tr_auct = tr_auct0,
+               rmse = rmsei, tr_aucg = tr_aucgi, tt_aucg = tt_aucgi, tr_auct = tr_aucti,
+               rmse = rmsej, tr_aucg = tr_aucgj, tt_aucg = tt_aucgj, tr_auct = tr_auctj,
+               seed = seed, out = out), file.path(out_name))
 
 
 
