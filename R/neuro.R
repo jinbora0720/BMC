@@ -36,7 +36,7 @@ pred_idx <- readRDS(paste0(path, "data/neuro_pred_idx.rds"))
 prob_missing <- 0.03
 set.seed(330); missing_idx <- pred_idx[sample(nrow(pred_idx), prob_missing*m*J),]
 misdata <- data_missing(simdata = simdata, missing_idx = missing_idx, seed = 330)
-names(misdata)[5] <- "Y"
+misdata$Y <- misdata$orgY
 
 ###################
 # MCMC parameters #
