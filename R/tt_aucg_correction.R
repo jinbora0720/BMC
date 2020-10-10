@@ -21,6 +21,8 @@ set.seed(123)
 seedsave <- sample(10000, 50, replace=FALSE)
 
 tt_aucg = tt_aucg0 = tt_aucgi = rep(NA, 50)
+save <- 1000
+
 for (iter in 1:50) {
   seed = seedsave[iter]
   gendata = generate_data(m, J, d=3, seed)
