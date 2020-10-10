@@ -47,7 +47,7 @@ iter <- taskID <- as.integer(Sys.getenv('SLURM_ARRAY_TASK_ID'))
   missing_idx_col = misdata$missing_idx_col 
   test_idx = apply(missing_idx,1,function(x) x[2]+J*(x[1]-1))
   
-  tt_gamma = as.numeric(truth$gamma_ij)[missing_idx]
+  tt_gamma = as.numeric(truth$gamma_ij[missing_idx])
   tr_gamma = as.numeric(truth$gamma_ij)[-missing_idx_col]
   tr_t = as.numeric(truth$t_ij)[-missing_idx_col]
   

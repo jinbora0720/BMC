@@ -34,7 +34,7 @@ for (iter in 1:50) {
   missing_idx_col = misdata$missing_idx_col 
   test_idx = apply(missing_idx,1,function(x) x[2]+J*(x[1]-1))
   
-  tt_gamma = as.numeric(truth$gamma_ij)[missing_idx]
+  tt_gamma = as.numeric(truth$gamma_ij[missing_idx])
 
   # BMC
   out = readRDS(paste0(path, "data/sim1_BMC_res_", iter, ".rds"))$out
@@ -57,17 +57,6 @@ for (iter in 1:50) {
   tt_pred0 = prediction(as.numeric(gamma_ij.postm0[missing_idx]), tt_gamma)
   tt_rocs0 = performance(tt_pred0, measure = "auc")
   tt_aucg0[iter] = tt_rocs0@y.values[[1]]
-  
-  # BMCi
-  outi = readRDS(paste0(path, "data/sim1_BMCi_res_", iter, ".rds"))$out
-  gamma_ij.savei = outi$gamma_ij.save
-  gamma_ij.savei[is.na(gamma_ij.savei)] = sapply(1:save, function(s) rbinom(nrow(missing_idx), 1, outi$pi_ij.save[,,s][missing_idx]))
-  gamma_ij.postmi = rowMeans(gamma_ij.savei, dim=2, na.rm=TRUE)
-  
-  ## 3. AUC for predicted gamma
-  tt_predi = prediction(as.numeric(gamma_ij.postmi[missing_idx]), tt_gamma)
-  tt_rocsi = performance(tt_predi, measure = "auc")
-  tt_aucgi[iter] = tt_rocsi@y.values[[1]]
 }
 
 BMC_new = readRDS(paste0(path, "data/sim1_BMC_new.rds"))
@@ -77,8 +66,3 @@ saveRDS(BMC_new, paste0(path, "data/sim1_BMC_new2.rds"))
 BMC0_new = readRDS(paste0(path, "data/sim1_BMC0_new.rds"))
 BMC0_new$tt_aucg = tt_aucg0
 saveRDS(BMC0_new, paste0(path, "data/sim1_BMC0_new2.rds"))
-
-BMCi_new = readRDS(paste0(path, "data/sim1_BMCi_new.rds"))
-BMCi_new$tt_aucg = tt_aucgi
-saveRDS(BMCi_new, paste0(path, "data/sim1_BMCi_new2.rds"))
-
