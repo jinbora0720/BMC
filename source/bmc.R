@@ -20,7 +20,7 @@
 bmc <- function(Data = list(), MCMC = list(thin=1, burnin=0, save=1000), 
                 hyper = list(), init = list(), 
                 hetero = TRUE, adapt = TRUE, simpler = FALSE, verbose = TRUE) {
-  
+
   ##################
   # to get started #
   ##################

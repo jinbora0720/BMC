@@ -15,7 +15,7 @@ library(ZIPLL)
 path <- "~/Documents/GitHub/BMC/"
 source(paste0(path, "source/bmc.R"))
 source(paste0(path, "source/bmc_sampler.R"))
-sourceCpp(paste0(path, "source/bmc_sampler2.cpp"))
+sourceCpp(paste0(path, "source/bmc_sampler.cpp"))
 sourceCpp(paste0(path, "source/samplerBits.cpp"))
 source(paste0(path, "source/simdata.R"))
 source(paste0(path, "source/simulate_data.R"))
@@ -330,6 +330,40 @@ resj <- list(rmse = rmsej, tr_aucg = tr_aucgj, tt_aucg = tt_aucgj,
 res_tcpl <- list(rmse = rmse_tcpl, tr_aucg = tr_aucg_tcpl, seedsave = seedsave[iterpool])
 res_ZIPLL <- list(rmse = rmse_ZIPLL, tr_aucg = tr_aucg_ZIPLL, seedsave = seedsave[iterpool])
 
-saveRDS(list(res = res, res0 = res0, resi = resi, resj = resj, 
-             res_tcpl = res_tcpl, res_ZIPLL = res_ZIPLL),
-        file.path(path, "data/sim2_results.rds"))
+# save result
+# saveRDS(list(res = res, res0 = res0, resi = resi, resj = resj, 
+#              res_tcpl = res_tcpl, res_ZIPLL = res_ZIPLL),
+#         paste0(path, "data/sim2_results.rds"))
+
+# call result 
+# all <- readRDS(paste0(path, "data/sim2_results.rds"))
+# res <- all$res
+# res0 <- all$res0
+# resi <- all$resi
+# resj <- all$resj
+# res_tcpl <- all$res_tcpl
+# res_ZIPLL <- all$res_ZIPLL
+
+#----------------------------------------------------------------------------------------------------------------------------------
+# Table S1: Summary of results from Simulation 2
+
+mres <- matrix(c(round(unlist(lapply(res[1:3], mean)), 3), 
+                  round(unlist(lapply(res0[1:3], mean)), 3),
+                  round(unlist(lapply(resi[1:3], mean)), 3), 
+                  round(unlist(lapply(resj[1:3], mean)), 3),
+                  c(round(unlist(lapply(res_ZIPLL[1:2], mean)), 3), NA), 
+                  c(round(unlist(lapply(res_tcpl[1:2], mean)), 3), NA)), 3, 6)
+rownames(mres) <- c('RMSE', 'In-sample AUC for rij', 'Out-of-sample AUC for rij')
+colnames(mres) <- c('BMC', 'BMC0', 'BMCi', 'BMCj', 'ZIPLL', 'tcpl')
+
+sdres <- matrix(c(round(unlist(lapply(res[1:3], sd)), 3), 
+                   round(unlist(lapply(res0[1:3], sd)), 3), 
+                   round(unlist(lapply(resi[1:3], sd)), 3), 
+                   round(unlist(lapply(resj[1:3], sd)), 3), 
+                   c(round(unlist(lapply(res_ZIPLL[1:2], sd)), 3), NA), 
+                   c(round(unlist(lapply(res_tcpl[1:2], sd)), 3), NA)), 3, 6)
+rownames(sdres) <- c('RMSE', 'In-sample AUC for rij', 'Out-of-sample AUC for rij')
+colnames(sdres) <- c('BMC', 'BMC0', 'BMCi', 'BMCj', 'ZIPLL', 'tcpl')
+
+cat('mean table\n'); mres
+cat('sd table\n'); sdres

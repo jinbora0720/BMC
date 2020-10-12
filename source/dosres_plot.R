@@ -9,7 +9,6 @@
 dosres_plot <- function(i, j, data, result, realdata = FALSE, pred = FALSE) {
   
   if (pred & realdata) {
-    set.seed(330)
     
     # data
     simdata <- data$simdata
@@ -39,7 +38,6 @@ dosres_plot <- function(i, j, data, result, realdata = FALSE, pred = FALSE) {
            subtitle=paste("Predicted Pr(Mean Effect) =", gamma_ij.postm[i,j]))  
     
   } else if (realdata) {
-    set.seed(330)
     
     # data
     misdata <- data$misdata
