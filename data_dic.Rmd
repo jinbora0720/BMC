@@ -9,7 +9,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Data Structure 
 
-`datalist.rds` is a list containing `neuro_data`, `obese_data`, and `hit_vec`. 
+`datalist.rds` is a list containing `neuro_data`, `obese_data`, and `hit_vec`.  
 
 * `neuro_data` is the processed ToxCast/Tox21 data with 30 chemicals and 131 assay endpoints relevant to neurodevelopmental disorders. 
 * `obese_data` is the processed ToxCast/Tox21 data with 30 chemicals and 271 obesity-related assay endpoints. 
