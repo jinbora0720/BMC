@@ -1,0 +1,12 @@
+---
+title: "BMC NEWS"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Commit History 
+
+* commit `10c72d7` at time of submission
