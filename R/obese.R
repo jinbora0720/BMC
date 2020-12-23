@@ -7,7 +7,7 @@ library(tidyverse)
 library(splines) 
 
 # source code
-path <- "~/Documents/GitHub/BMC/"
+path <- "~/Documents/BoraJin2018~/Research/DoseResponse/BMC/"
 source(paste0(path, "source/bmc.R"))
 source(paste0(path, "source/bmc_sampler.R"))
 sourceCpp(paste0(path, "source/bmc_sampler2.cpp"))
@@ -171,7 +171,7 @@ prc_res <- list(predY.postL = predY.postL, predY.postU = predY.postU,
 # prc_res <- readRDS(paste0(path, "data/obese_processed.rds"))
 
 #----------------------------------------------------------------------------------------------------------------------------------
-# Figure 13: Chemical ranks by the average active probability 
+# Figure S9: Chemical ranks by the average active probability 
 # Prob.Active
 actprob <- 1-rowMeans((1-out$gamma_ij.save)*(1-out$t_ij.save), dim=2, na.rm=TRUE)
 
@@ -192,7 +192,7 @@ data.frame(act = rowMeans(actprob, na.rm=TRUE),
         plot.title = element_text(size=20)) 
 
 #----------------------------------------------------------------------------------------------------------------------------------
-# Figure S5: Ranks of assay endpoints likely to be activated by the top 5 chemicals 
+# Figure S12: Ranks of assay endpoints likely to be activated by the top 5 chemicals 
 obese_ascend_chnm <- uniq_chnm[order(rowMeans(actprob, na.rm=TRUE))]
 obese_active_aenm <- data.frame(act = colMeans(actprob[which(uniq_chnm %in% obese_ascend_chnm[c(26:30)]),], na.rm=TRUE), 
                                 averhit = colMeans(hit_mat, na.rm=TRUE), aenm=uniq_aenm) %>% 
@@ -218,7 +218,7 @@ data.frame(act = colMeans(actprob[which(uniq_chnm %in% obese_ascend_chnm[c(26:30
         plot.title = element_text(size=20))
 
 #----------------------------------------------------------------------------------------------------------------------------------
-# Figure 9: Results for active pairs 
+# Figure 4 (top row): Results for active pairs 
 data_f <- list(misdata = misdata, meta = meta)
 result_f <- list(out = list(gamma_ij.postm = gamma_ij.postm, t_ij.postm = t_ij.postm), 
                  hit_mat = hit_mat, prc_res = prc_res)
@@ -233,7 +233,7 @@ t2 <- dosres_plot(i = which(uniq_chnm == "p,p'-DDE"),
 gridExtra::grid.arrange(t1, t2, nrow=1)
 
 #----------------------------------------------------------------------------------------------------------------------------------
-# Figure 10: Results for active pairs with mean effect
+# Figure 4 (middle row): Results for active pairs with mean effect
 t3 <- dosres_plot(i = which(uniq_chnm == "Dibutyl phthalate"), 
                   j = which(uniq_aenm == "ATG_PPARg_TRANS_up"),
                   data_f, result_f, realdata = TRUE)
@@ -244,7 +244,7 @@ t4 <- dosres_plot(i = which(uniq_chnm == "Bisphenol A"),
 gridExtra::grid.arrange(t3, t4, nrow=1)
 
 #----------------------------------------------------------------------------------------------------------------------------------
-# Figure 11: Results for active pairs with variance effect
+# Figure 4 (bottom row): Results for active pairs with variance effect
 t5 <- dosres_plot(i = which(uniq_chnm == "Diisobutyl phthalate"), 
                   j = which(uniq_aenm == "TOX21_CAR_Antagonist"),
                   data_f, result_f, realdata = TRUE)
@@ -255,7 +255,7 @@ t6 <- dosres_plot(i = which(uniq_chnm == "Di(2-ethylhexyl) phthalate"),
 gridExtra::grid.arrange(t5, t6, nrow=1)
 
 #----------------------------------------------------------------------------------------------------------------------------------
-# Figure 12: Results for hold-out pairs
+# Figure 5: Results for hold-out pairs
 data_f12 <- list(simdata = simdata, meta = meta)
 result_f12 <- gamma_ij.postm
 
@@ -281,7 +281,7 @@ HDInterval::hdi(as.numeric(tr_gamma_ij.postm))
 HDInterval::hdi(as.numeric(gamma_ij.postm[missing_idx]))
 
 #----------------------------------------------------------------------------------------------------------------------------------
-# Figure S3: Results for hold-out pairs
+# Figure S8: Results for hold-out pairs
 t9 <- dosres_plot(i = which(uniq_chnm == "Dichlorodiphenyltrichloroethane"), 
                   j = which(uniq_aenm == "ATG_IR1_CIS_dn"),
                   data_f12, result_f12, realdata = TRUE, pred = TRUE)

@@ -104,7 +104,7 @@ hit_mat <- as.matrix(hit_mat[uniq_code,uniq_aenm])
 hit_mat[which(is.na(gamma_ij.postm))] <- NA
 
 #----------------------------------------------------------------------------------------------------------------------------------
-# Figure S4: Chemical ranks by the average active probability 
+# Figure S10: Chemical ranks by the average active probability 
 # Prob.Active
 actprob <- 1-rowMeans((1-out$gamma_ij.save)*(1-out$t_ij.save), dim=2, na.rm=TRUE)
 
@@ -125,7 +125,7 @@ data.frame(act = rowMeans(actprob, na.rm=TRUE),
         plot.title = element_text(size=20)) 
 
 #----------------------------------------------------------------------------------------------------------------------------------
-# Figure 14: Ranks of assay endpoints likely to be activated by the top 5 chemicals 
+# Figure S11: Ranks of assay endpoints likely to be activated by the top 5 chemicals 
 # ("Bisphenol A", "p,p'-DDE", "2,4,5-Trichlorophenol", "Dichlorodiphenyltrichloroethane", "Triclosan")
 neuro_ascend_chnm <- uniq_chnm[order(rowMeans(actprob, na.rm=TRUE))]
 neuro_active_aenm <- data.frame(act = colMeans(actprob[which(uniq_chnm %in% neuro_ascend_chnm[c(24,27:30)]),], na.rm=TRUE), 
