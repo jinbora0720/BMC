@@ -210,7 +210,7 @@ data.frame(act = colMeans(actprob[which(uniq_chnm %in% obese_ascend_chnm[c(26:30
        color="Involved in both diseases", 
        shape="Involved in both diseases") +
   theme_minimal() + theme_bw() + 
-  theme(axis.text.x = element_text(angle=75, hjust=1, size=15), 
+  theme(axis.text.x = element_text(angle=75, hjust=1, size=10), 
         legend.position = "bottom", 
         legend.title = element_text(size=15),
         legend.text = element_text(size=15), 
