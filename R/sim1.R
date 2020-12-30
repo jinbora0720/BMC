@@ -530,7 +530,7 @@ t4 <- ggplot(cbind(truth$Lambda,matrix(0,30,3)) %>% reshape2::melt()) + # for be
 gridExtra::grid.arrange(t3, t4, nrow=1)
 
 #----------------------------------------------------------------------------------------------------------------------------------
-# Figure 2: heat map of estimate and true profiles of the mean effect 
+# Figure 3: heat map of estimate and true profiles of the mean effect 
 pred <- which(is.na(tr_gamma_ij.postm[6:10,6:10]), arr.ind = TRUE)
 frames <- data.frame(Var1=pred[,1], Var2=pred[,2])
 t5 <- reshape2::melt(gamma_ij.postm[6:10,6:10]) %>% 
@@ -560,7 +560,7 @@ t6 <- reshape2::melt(truth$gamma_ij[6:10,6:10]) %>%
 gridExtra::grid.arrange(t5, t6, nrow=1, widths=c(1.345/3,1.655/3))
 
 #----------------------------------------------------------------------------------------------------------------------------------
-# Figure 3: dose-response curves
+# Figure 2: dose-response curves
 data_f7 <- list(misdata = misdata, truth = truth)
 res_f7 <- list(res_ZIPLL = res_ZIPLL, 
                out = list(gamma_ij.postm = gamma_ij.postm, t_ij.postm = t_ij.postm), 
