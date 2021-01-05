@@ -1,12 +1,12 @@
 # EDA plots 
-# from obesity: Figure 1
-# from neurodevelopmental disorders: Figure 2, 3, S1, S2
+# from obesity: Figure S1
+# from neurodevelopmental disorders: Figure 1, S2, S3, S4
 
 # dependencies 
 library(tidyverse)
 
 # call data 
-path <- "~/Documents/GitHub/BMC/"
+path <- "~/Documents/BoraJin2018~/Research/DoseResponse/BMC/"
 datalist <- readRDS(paste0(path, "data/datalist.rds"))
 neuro_data <- datalist$neuro_data
 obese_data <- datalist$obese_data
@@ -26,7 +26,7 @@ Y <- neuro_meta$Y
 orgX <- lapply(neuro_meta$orgData, function(x) x[,1])
 
 #----------------------------------------------------------------------------------------------------------------------------------
-# Figure 1: Heat map of the number of observations in ToxCast/Tox21 data for obesity
+# Figure S1: Heat map of the number of observations in ToxCast/Tox21 data for obesity
 reshape2::melt(K_ij) %>% 
   mutate(countfactor=cut(value, breaks=c(-1,0,1,10,100,500,max(value)), 
                          labels=c("0","1","2-10","11-100","101-500","501-870"))) %>% 
@@ -45,7 +45,7 @@ reshape2::melt(K_ij) %>%
 rm(obese_meta, K_ij)
 
 #----------------------------------------------------------------------------------------------------------------------------------
-# Figure 2: Detailed illustration of the ToxCast/Tox21 data structure. 
+# Figure 1: Detailed illustration of the ToxCast/Tox21 data structure. 
 chnm_sub <- uniq_chnm[c(9, 11, 16, 22, 23, 25, 27)]
 aenm_sub <- uniq_aenm[c(2, 30, 101, 120, 125)]
 neuro_sub <- neuro_data %>% filter(chnm %in% chnm_sub, aenm %in% aenm_sub) %>% select(logc, resp, chnm, aenm) 
@@ -63,7 +63,7 @@ neuro_sub %>%
   theme(axis.title= element_text(size=20))
 
 #----------------------------------------------------------------------------------------------------------------------------------
-# Figure 3: Scatter plots of two chemicals on TOX21_ERa_LUC_BG1_Agonist
+# Figure S3: Scatter plots of two chemicals on TOX21_ERa_LUC_BG1_Agonist
 i <- which(uniq_chnm == "Di-n-octyl phthalate")
 j <- which(uniq_aenm == "TOX21_ERa_LUC_BG1_Agonist")
 
@@ -91,7 +91,7 @@ t2 <- data.frame(resp = Y[[j]][Start[inew,j]:End[inew,j]],
 gridExtra::grid.arrange(t1, t2, nrow=1)
 
 #----------------------------------------------------------------------------------------------------------------------------------
-# Figure S1: Histogram of the number of unique doses tested. 
+# Figure S2: Histogram of the number of unique doses tested. 
 neuro_data %>% group_by(casn, aenm) %>% summarise(n_dose = length(unique(logc))) %>% 
   ggplot() + geom_histogram(aes(n_dose), fill="#666666", col="black", bins = 30) + 
   theme_bw() + 
@@ -111,7 +111,7 @@ sum(neuro_rep$n_rep == 1)/nrow(neuro_rep)
 rm(neuro_dose, neuro_rep)
 
 #----------------------------------------------------------------------------------------------------------------------------------
-# Figure S2: Scatter plot of the responses by assay endpoint. 
+# Figure S4: Scatter plot of the responses by assay endpoint. 
 data.frame(res=unlist(Y[75:J]), aenm=rep(75:J, apply(End[,75:J], 2, max))) %>% 
   ggplot() + geom_point(aes(as.factor(aenm), res)) + 
   theme_bw() + 

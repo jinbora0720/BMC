@@ -2,7 +2,7 @@
 # Table S1: summary of results from simulation 2
 
 # call data
-path <- "~/Documents/GitHub/BMC/"
+path <- "~/Documents/BoraJin2018~/Research/DoseResponse/BMC/"
 AllRes <- readRDS(paste0(path, "data/sim2_results.rds"))
 
 # BMC

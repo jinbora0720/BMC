@@ -6,7 +6,7 @@
 library(tidyverse)
 
 # source code 
-path <- "~/Documents/GitHub/BMC/"
+path <- "~/Documents/BoraJin2018~/Research/DoseResponse/BMC/"
 source(paste0(path, "source/simulate_data.R"))
 
 # call data 

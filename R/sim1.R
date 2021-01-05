@@ -12,7 +12,7 @@ library(tcpl)
 library(ZIPLL)
 
 # source code
-path <- "~/Documents/GitHub/BMC/"
+path <- "~/Documents/BoraJin2018~/Research/DoseResponse/BMC/"
 source(paste0(path, "source/bmc.R"))
 source(paste0(path, "source/bmc_sampler.R"))
 sourceCpp(paste0(path, "source/bmc_sampler2.cpp"))
@@ -463,7 +463,7 @@ cat('mean table\n'); mres
 cat('sd table\n'); sdres
 
 #----------------------------------------------------------------------------------------------------------------------------------
-# Figure 4: heat map of the estimated and true correlation matrix 
+# Figure S5: heat map of the estimated and true correlation matrix 
 z_cor_T <- cov2cor(tcrossprod(truth$Lambda) + diag(1, m))
 z_cor_data <- reshape2::melt(z_cor_T)
 cor.postm <- cov2cor(out$covMean)
@@ -495,7 +495,7 @@ t2 <- ggplot(z_cor_T %>% reshape2::melt())+
 gridExtra::grid.arrange(t1, t2, nrow=1, widths=c(1.275/3,1.725/3))
 
 #----------------------------------------------------------------------------------------------------------------------------------
-# Figure 5: the estimated and true entries of loading matrix 
+# Figure S6: the estimated and true entries of loading matrix 
 lambda.postm <- Reduce("+", out$Lambda.save)/length(out$Lambda.save)
 lambda.postm[,1:2] <- lambda.postm[,c(2,1)] # for better visuatlization
 lambda.postm[,1] <- (-1)*lambda.postm[,1] # for better visuatlization
@@ -530,7 +530,7 @@ t4 <- ggplot(cbind(truth$Lambda,matrix(0,30,3)) %>% reshape2::melt()) + # for be
 gridExtra::grid.arrange(t3, t4, nrow=1)
 
 #----------------------------------------------------------------------------------------------------------------------------------
-# Figure 6: heat map of estimate and true profiles of the mean effect 
+# Figure 3: heat map of estimate and true profiles of the mean effect 
 pred <- which(is.na(tr_gamma_ij.postm[6:10,6:10]), arr.ind = TRUE)
 frames <- data.frame(Var1=pred[,1], Var2=pred[,2])
 t5 <- reshape2::melt(gamma_ij.postm[6:10,6:10]) %>% 
@@ -560,7 +560,7 @@ t6 <- reshape2::melt(truth$gamma_ij[6:10,6:10]) %>%
 gridExtra::grid.arrange(t5, t6, nrow=1, widths=c(1.345/3,1.655/3))
 
 #----------------------------------------------------------------------------------------------------------------------------------
-# Figure 7: dose-response curves
+# Figure 2: dose-response curves
 data_f7 <- list(misdata = misdata, truth = truth)
 res_f7 <- list(res_ZIPLL = res_ZIPLL, 
                out = list(gamma_ij.postm = gamma_ij.postm, t_ij.postm = t_ij.postm), 
@@ -573,7 +573,7 @@ t9 <- dosres_plot(i = 24, j = 104, data = data_f7, result = res_f7)
 ggpubr::ggarrange(t7, t8, t9, nrow=1, ncol=3, common.legend=TRUE, legend="bottom", labels="AUTO")
 
 #----------------------------------------------------------------------------------------------------------------------------------
-# Figure 8: residuals versus fitted values 
+# Figure S7: residuals versus fitted values 
 data_f8 <- misdata
 res_f8 <- list(res_ZIPLL = res_ZIPLL, prc_res = prc_res)
 

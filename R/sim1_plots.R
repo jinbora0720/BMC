@@ -7,7 +7,7 @@ library(tcpl)
 library(splines)
 
 # source code
-path <- "~/Documents/GitHub/BMC/"
+path <- "~/Documents/BoraJin2018~/Research/DoseResponse/BMC/"
 sourceCpp(paste0(path, "source/msf.cpp"))
 source(paste0(path, "source/simulate_data.R"))
 source(paste0(path, "source/dosres_plot.R"))
