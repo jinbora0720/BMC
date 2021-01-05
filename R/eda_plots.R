@@ -6,7 +6,7 @@
 library(tidyverse)
 
 # call data 
-path <- "~/Documents/GitHub/BMC/"
+path <- "~/Documents/BoraJin2018~/Research/DoseResponse/BMC/"
 datalist <- readRDS(paste0(path, "data/datalist.rds"))
 neuro_data <- datalist$neuro_data
 obese_data <- datalist$obese_data

@@ -7,7 +7,7 @@ library(tidyverse)
 library(splines) 
 
 # source code
-path <- "~/Documents/GitHub/BMC/"
+path <- "~/Documents/BoraJin2018~/Research/DoseResponse/BMC/"
 source(paste0(path, "source/bmc.R"))
 source(paste0(path, "source/bmc_sampler.R"))
 sourceCpp(paste0(path, "source/bmc_sampler2.cpp"))
