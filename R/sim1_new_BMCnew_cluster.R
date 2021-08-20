@@ -9,7 +9,7 @@ library(splines)
 library(ROCR)
 
 # source code
-path <- "/work/bj91/BMC/"
+path <- "~BMC/BMC/"
 source(paste0(path, "source/bmc_new.R"))
 source(paste0(path, "source/bmc_sampler_new.R"))
 sourceCpp(paste0(path, "source/bmc_sampler2_new.cpp"))
