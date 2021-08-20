@@ -11,11 +11,13 @@ simulate_lambda = function(m, q, df=3, ad1=2.1, ad2=3.1) {
   return(matrix(rnorm(m*q, mean=0, sd=1/sqrt(Plam)), m, q))
 }
 
-generate_data = function(m, J, d=1, seed) {
+generate_data = function(m, J, d=1, q=2, xi=-1, alpha=c(-.5, .7), seed=123) {
   # Assumes equal number of measurements (d) for each dose 
   # m: number of chemicals 
   # J: number of assay endpoints 
   # q: number of factors 
+  # xi: Pr(gamma_ij = 1) = pnorm(xi + Lambda x eta)
+  # alpha = (alpha0, alpha1): Pr(t_ij = 1) = pnorm(alpha0 + alpha1(Lambda x eta))
   
   set.seed(seed)
   
@@ -41,11 +43,11 @@ generate_data = function(m, J, d=1, seed) {
   }
   
   # Lambda, Eta
-  q = 2
   Lambda = simulate_lambda(m, q)
   eta = matrix(rnorm(J*q), J, q)
+  le = tcrossprod(Lambda, eta)
   
-  pi_ij = pnorm(tcrossprod(Lambda, eta))
+  pi_ij = pnorm(xi + le)
   gamma_ij = matrix(rbinom(m*J, 1, pi_ij), m, J)
   for (j in 1:J) {
     gamma_ij[-idx_j[[j]], j] = NA
@@ -83,8 +85,6 @@ generate_data = function(m, J, d=1, seed) {
   
   # heteroscedasticity 
   t_ij = d_ij = matrix(NA, m, J)
-  le = tcrossprod(Lambda, eta)
-  alpha = c(-.5, .7)
   W = alpha[1] + alpha[2]*le
   t_ij = matrix(rbinom(m*J, 1, pnorm(W)), m, J)
   for (j in 1:J) {
@@ -116,8 +116,9 @@ generate_data = function(m, J, d=1, seed) {
                 do.call("rbind", replicate(m, CX, simplify = FALSE)), 
                 simplify = FALSE)
   
-  return(list(simdata = list(orgX=orgX, orgY=orgY, X=X, K_ij=K_ij, m_j=m_j, idx_j=idx_j, Start=Start, End=End),
-              truth = list(q=q, Lambda=Lambda, eta=eta, gamma_ij=gamma_ij, rxf=rxf, 
+  return(list(simdata = list(orgX=orgX, orgY=orgY, X=X, K_ij=K_ij, 
+                             m_j=m_j, idx_j=idx_j, Start=Start, End=End),
+              truth = list(Lambda=Lambda, eta=eta, gamma_ij=gamma_ij, rxf=rxf, 
                            t_ij=t_ij, d_ij=d_ij, sigj_sq=sigj_sq)))
 }
 
