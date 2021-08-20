@@ -35,6 +35,10 @@ bmc_new <- function(Data = list(), MCMC = list(thin=1, burnin=0, save=1000),
     hetero_simpler = FALSE
   }
   
+  if (sp & hetero & !hetero_simpler) {
+    stop("hetero_simpler should be TRUE when gamma_simpler is specified.")
+  }
+  
   ## functions for gamma_simpler 
   if (gamma_simpler == "bmc0") {
     pi.post = function(gamma_ij, m_j) {
