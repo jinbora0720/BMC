@@ -13,7 +13,7 @@ for (i in 1:50) {
   tt_aucg[i] <- res$tt_aucg
   tr_auct[i] <- res$tr_auct
   tt_auct[i] <- res$tt_auct
-  alpha[i,] <- res$alpha
+  alpha[,i] <- res$alpha
   seedsave[i] <- res$seed
 }
 saveRDS(list(rmse = rmse, tr_aucg = tr_aucg, tt_aucg = tt_aucg, tr_auct = tr_auct, 
