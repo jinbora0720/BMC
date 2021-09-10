@@ -137,7 +137,7 @@ Rcpp::List gbcpp_post(const List& Y, const List& X,
                       const arma::mat& Sigj, const arma::vec& sigj_sq,
                       const List& idx_j, IntegerVector m_j, 
                       IntegerMatrix Start, IntegerMatrix End, 
-                      const arma::vec& cutoff, 
+                      const arma::mat& cutoff, 
                       bool apply_cutoff = false) {
   int J = pi_ij.n_cols;
   int m = pi_ij.n_rows;
@@ -148,11 +148,17 @@ Rcpp::List gbcpp_post(const List& Y, const List& X,
   arma::vec iSigvec;
   arma::vec Sigvec;
   arma::mat gamma_ij;
+  arma::mat kappa_ij;
   List beta_ij(J);
   arma::mat betajmat;
   arma::colvec dum;
   
   gamma_ij = arma::mat(m,J).fill(NA_REAL);
+  
+  if (apply_cutoff) {
+    kappa_ij = arma::mat(m,J).fill(NA_REAL);
+  }
+  
   for (int j = 0; j < J; j++) {
     Yvec = as<arma::vec>(Y[j]);
     Xmat = as<arma::mat>(X[j]);
@@ -180,6 +186,10 @@ Rcpp::List gbcpp_post(const List& Y, const List& X,
       NumericVector gamma = rbinom(1,1,1/(1+exp(-loggam1+loggam0)));
       gamma_ij(idxj[i]-1,j) = gamma[0];
       
+      if (apply_cutoff) {
+        kappa_ij(idxj[i]-1,j) = gamma[0];
+      }
+      
       if (gamma[0] == 1) {
         arma::vec mu = invV*mu0;
         arma::mat Z = arma::randn(p,1);
@@ -187,9 +197,9 @@ Rcpp::List gbcpp_post(const List& Y, const List& X,
         betajmat.submat(0,i,p-1,i) = beta;
         
         if (apply_cutoff) {
-          if (max(abs(Xmat.submat(Start(i,j)-1,0,End(i,j)-1,p-1)*beta)) < cutoff(j)) {
-            gamma_ij(idxj[i]-1,j) = 0;
-            betajmat.submat(0,i,p-1,i) = arma::zeros(p);
+          if (max(abs(Xmat.submat(Start(i,j)-1,0,End(i,j)-1,p-1)*beta)) <= cutoff(idxj[i]-1,j)) {
+            kappa_ij(idxj[i]-1,j) = 0;
+            // betajmat.submat(0,i,p-1,i) = arma::zeros(p);
           }
         } 
       } else {
@@ -203,5 +213,10 @@ Rcpp::List gbcpp_post(const List& Y, const List& X,
   List out;
   out["beta_ij"] = beta_ij;
   out["gamma_ij"] = gamma_ij;
+  
+  if (apply_cutoff) {
+    out["kappa_ij"] = kappa_ij;
+  }
+  
   return out;
 }

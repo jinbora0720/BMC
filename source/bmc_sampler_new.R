@@ -1,10 +1,11 @@
 # ----- Heteroscedasticity ----- #
 # alpha
-alpha.post = function(le, u_ij) {
+alpha.post = function(le, u_ij, mu_alpha = rep(0, 2), sigsq_alpha = rep(100, 2)) {
   u_ij[is.na(u_ij)] = 0 # purely for computational reason
   W = cbind(1, as.numeric(le))
-  V = solve(diag(0.01, 2) + t(W)%*%W)
-  return(V%*%t(W)%*%matrix(u_ij, ncol = 1) + t(chol(V))%*%rnorm(2))
+  V = solve(diag(1/sigsq_alpha) + t(W)%*%W)
+  return(V%*%(matrix(mu_alpha/sigsq_alpha, ncol = 1) +
+                t(W)%*%matrix(u_ij, ncol = 1)) + t(chol(V))%*%rnorm(2))
 }
 
 # u_ij
@@ -224,7 +225,7 @@ z_ij.post = function(le, gamma_ij) {
 }
 
 # xi 
-xi.post = function(z_ij, m_j) {
-  var = 1/(1/100 + sum(m_j))
-  return(var*sum(z_ij, na.rm = TRUE) + sqrt(var)*rnorm(1))
+xi.post = function(z_ij, m_j, mu_xi = 0, sigsq_xi = 100) {
+  var = 1/(1/sigsq_xi + sum(m_j))
+  return(var*(mu_xi/sigsq_xi + sum(z_ij, na.rm = TRUE)) + sqrt(var)*rnorm(1))
 }

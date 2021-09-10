@@ -21,6 +21,9 @@ source(paste0(path, "source/simulate_data_new.R"))
 ########
 m <- 30
 J <- 150
+q <- 2
+alpha <- c(0.3,1)
+xi <- 0.8
 
 set.seed(123)
 seedsave <- sample(10000, 50, replace=FALSE)
@@ -37,7 +40,8 @@ MCMC <- list(thin = thin, burnin = burnin, save = save)
 iter <- taskID <- as.integer(Sys.getenv('SLURM_ARRAY_TASK_ID'))
 
   seed = seedsave[iter]
-  gendata = generate_data(m, J, d=3, q=2, xi=0, alpha=c(-.5, 1.3), seed)
+  gendata = generate_data(m=m, J=J, d=3, q=q, 
+                          xi=xi, alpha=alpha, delta_mean=1, seed=seed)
   simdata = gendata$simdata
   truth = gendata$truth
   
@@ -78,7 +82,17 @@ iter <- taskID <- as.integer(Sys.getenv('SLURM_ARRAY_TASK_ID'))
   invSigj = apply(Sigj, 2, function(x) c(ginv(matrix(x, p, p))))
   R = matrix((a-p-1)*rowMeans(Sigj, na.rm=TRUE), p, p)
   v_d = var(unlist(Y))
-  hyper = list(a = a, R = R, v_d = v_d)
+  
+  ## informative prior
+  mu_xi = qnorm(sum(truth$gamma_ij)/(m*J)) # xi 
+  sigsq_xi = 1
+  
+  mu_alpha = c(0,1)
+  sigsq_alpha = c(5,5)
+  
+  hyper = list(a = a, R = R, v_d = v_d,
+               mu_xi = mu_xi, sigsq_xi = sigsq_xi,
+               mu_alpha = mu_alpha, sigsq_alpha = sigsq_alpha)
   
   ##################
   # initial values #
@@ -96,8 +110,8 @@ iter <- taskID <- as.integer(Sys.getenv('SLURM_ARRAY_TASK_ID'))
   #######
   out <- bmc_new(Data = misdata, MCMC = MCMC, hyper = hyper, init = init,
                  hetero = TRUE, hetero_simpler = FALSE,
-                 gamma_simpler = FALSE, adapt = FALSE, 
-                 update_xi = FALSE, apply_cutoff = FALSE, verbose = TRUE)
+                 gamma_simpler = FALSE, mgsp_adapt = FALSE, 
+                 update_xi = TRUE, apply_cutoff = FALSE, verbose = TRUE)
   
   Yhat.save = lapply(1:J, function(j) {
     sapply(1:save, function(s) {
@@ -125,7 +139,10 @@ iter <- taskID <- as.integer(Sys.getenv('SLURM_ARRAY_TASK_ID'))
   ## 2. AUC for gamma 
   gamma_ij.save = out$gamma_ij.save 
   le.save = mapply("tcrossprod", out$Lambda.save, out$eta.save, SIMPLIFY = FALSE)
-  z.save = lapply(le.save, function(x) matrix(rnorm(m*J, x, 1), m, J))
+  z.save = list()
+  for (i in 1:MCMC$save) {
+    z.save[[i]] = matrix(rnorm(m*J, le.save[[i]] + out$xi.save[i], 1), m, J)
+  }
   gamma_ij.save[is.na(gamma_ij.save)] = sapply(z.save, function(x) x[missing_idx]>0)
   gamma_ij.postm = rowMeans(gamma_ij.save, dim=2, na.rm=TRUE)
   
@@ -157,13 +174,16 @@ iter <- taskID <- as.integer(Sys.getenv('SLURM_ARRAY_TASK_ID'))
   ## 6. alphas 
   alpha.postm <- rowMeans(out$alpha.save)
   
+  ## 7. xi
+  xi.postm <- mean(out$xi.save)
+  
 ################
 # Save results #
 ################
   out_name <- paste0(path, "data/sim1_new_BMCnew_res_", iter, ".RDS")
   saveRDS(list(rmse = rmse, tr_aucg = tr_aucg, tt_aucg = tt_aucg, 
                tr_auct = tr_auct, tt_auct = tt_auct, 
-               alpha = alpha.postm, seed = seed), file.path(out_name))
+               alpha = alpha.postm, xi = xi.postm, seed = seed), file.path(out_name))
 
 
 
