@@ -55,6 +55,8 @@ iter <- taskID <- as.integer(Sys.getenv('SLURM_ARRAY_TASK_ID'))
   tt_gamma = as.numeric(truth$gamma_ij[missing_idx])
   tr_gamma = as.numeric(truth$gamma_ij)[-missing_idx_col]
   tr_t = as.numeric(truth$t_ij)[-missing_idx_col]
+  actprob = 1-(1-truth$gamma_ij)*(1-truth$t_ij)
+  tr_actprob = as.numeric(actprob)[-missing_idx_col]
   
   X = misdata$X
   orgX = misdata$orgX
@@ -145,12 +147,18 @@ iter <- taskID <- as.integer(Sys.getenv('SLURM_ARRAY_TASK_ID'))
   tr_rocs_t = performance(tr_pred_t, measure = "auc")
   tr_auct = tr_rocs_t@y.values[[1]]
   
+  ## 5. AUC for gamma_ij = 1 or t_ij = 1
+  actprob.postm = 1-rowMeans((1-gamma_ij.save)*(1-out$t_ij.save), dim=2)
+  tr_pred_ap = prediction(as.numeric(actprob.postm)[-missing_idx_col], tr_actprob)
+  tr_rocs_ap = performance(tr_pred_ap, measure = "auc")
+  tr_aucap = tr_rocs_ap@y.values[[1]]
+  
 ################
 # Save results #
 ################
   out_name <- paste0(path, "data/sim1_new_BMCi_res_", iter, ".RDS")
   saveRDS(list(rmse = rmse, tr_aucg = tr_aucg, tt_aucg = tt_aucg, 
-               tr_auct = tr_auct, seed = seed), file.path(out_name))
+               tr_auct = tr_auct, tr_aucap = tr_aucap, seed = seed), file.path(out_name))
 
 
 

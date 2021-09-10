@@ -56,6 +56,9 @@ iter <- taskID <- as.integer(Sys.getenv('SLURM_ARRAY_TASK_ID'))
   tr_gamma = as.numeric(truth$gamma_ij)[-missing_idx_col]
   tt_t = as.numeric(truth$t_ij[missing_idx])
   tr_t = as.numeric(truth$t_ij)[-missing_idx_col]
+  actprob = 1-(1-truth$gamma_ij)*(1-truth$t_ij)
+  tt_actprob = as.numeric(actprob[missing_idx])
+  tr_actprob = as.numeric(actprob)[-missing_idx_col]
   
   X = misdata$X
   orgX = misdata$orgX
@@ -171,10 +174,21 @@ iter <- taskID <- as.integer(Sys.getenv('SLURM_ARRAY_TASK_ID'))
   tt_rocs_t = performance(tt_pred_t, measure = "auc")
   tt_auct = tt_rocs_t@y.values[[1]]
 
-  ## 6. alphas 
+  ## 6. AUC for gamma_ij = 1 or t_ij = 1
+  actprob.postm = 1-rowMeans((1-gamma_ij.save)*(1-t_ij.save), dim=2)
+  tr_pred_ap = prediction(as.numeric(actprob.postm)[-missing_idx_col], tr_actprob)
+  tr_rocs_ap = performance(tr_pred_ap, measure = "auc")
+  tr_aucap = tr_rocs_ap@y.values[[1]]
+  
+  ## 7. AUC for predicted gamma_ij = 1 or t_ij = 1
+  tt_pred_ap = prediction(as.numeric(actprob.postm[missing_idx]), tt_actprob)
+  tt_rocs_ap = performance(tt_pred_ap, measure = "auc")
+  tt_aucap = tt_rocs_ap@y.values[[1]]
+  
+  ## 8. alphas 
   alpha.postm <- rowMeans(out$alpha.save)
   
-  ## 7. xi
+  ## 9. xi
   xi.postm <- mean(out$xi.save)
   
 ################
@@ -183,6 +197,7 @@ iter <- taskID <- as.integer(Sys.getenv('SLURM_ARRAY_TASK_ID'))
   out_name <- paste0(path, "data/sim1_new_BMCnew_res_", iter, ".RDS")
   saveRDS(list(rmse = rmse, tr_aucg = tr_aucg, tt_aucg = tt_aucg, 
                tr_auct = tr_auct, tt_auct = tt_auct, 
+               tr_aucap = tr_aucap, tt_aucap = tt_aucap, 
                alpha = alpha.postm, xi = xi.postm, seed = seed), file.path(out_name))
 
 
