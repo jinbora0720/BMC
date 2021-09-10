@@ -21,6 +21,9 @@ source(paste0(path, "source/simulate_data_new.R"))
 ########
 m <- 30
 J <- 150
+q <- 2
+alpha <- c(0.3,1)
+xi <- 0.8
 
 set.seed(123)
 seedsave <- sample(10000, 50, replace=FALSE)
@@ -37,7 +40,8 @@ MCMC <- list(thin = thin, burnin = burnin, save = save)
 iter <- taskID <- as.integer(Sys.getenv('SLURM_ARRAY_TASK_ID'))
 
   seed = seedsave[iter]
-  gendata = generate_data(m, J, d=3, q=2, xi=0, alpha=c(-.5, 1.3), seed)
+  gendata = generate_data(m=m, J=J, d=3, q=q, 
+                          xi=xi, alpha=alpha, delta_mean=1, seed=seed)
   simdata = gendata$simdata
   truth = gendata$truth
   
@@ -95,7 +99,7 @@ iter <- taskID <- as.integer(Sys.getenv('SLURM_ARRAY_TASK_ID'))
   #######
   out <- bmc_new(Data = misdata, MCMC = MCMC, hyper = hyper, init = init,
                  hetero = TRUE, hetero_simpler = TRUE,
-                 gamma_simpler = "bmci", adapt = FALSE, 
+                 gamma_simpler = "bmci", mgsp_adapt = FALSE, 
                  update_xi = FALSE, apply_cutoff = FALSE, verbose = TRUE)
   
   Yhat.save = lapply(1:J, function(j) {
