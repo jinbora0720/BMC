@@ -50,7 +50,7 @@ bmc_new <- function(Data = list(), MCMC = list(thin=1, burnin=0, save=1000),
     pi.post = function(gamma_ij, m_j) {
       m = nrow(gamma_ij); J = ncol(gamma_ij)
       RCgam = sum(gamma_ij, na.rm=TRUE)
-      return(matrix(rbeta(m*J, 1+RCgam, 1+sum(m_j)-RCgam), m, J))
+      return(matrix(rbeta(1, 1+RCgam, 1+sum(m_j)-RCgam), m, J))
     }
   } else if (gamma_simpler == "bmci") {
     pi.post = function(gamma_ij, idx_j) {
@@ -360,6 +360,8 @@ bmc_new <- function(Data = list(), MCMC = list(thin=1, burnin=0, save=1000),
   if (hetero) {
     if (!hetero_simpler) {
       out$alpha.save = matrix(0, 2, save)
+    } else {
+      out$pi_t.save = rep(0, save)
     }
     out$t_ij.save = array(NA, dim = c(m,J,save))
     out$d_ij.save = array(NA, dim = c(m,J,save))
@@ -485,6 +487,8 @@ bmc_new <- function(Data = list(), MCMC = list(thin=1, burnin=0, save=1000),
       if (hetero) {
         if (!hetero_simpler) {
           out$alpha.save[,(s-burnin)/thin] = alpha
+        } else {
+          out$pi_t[(s-burnin)/thin] = pi_t
         }
         out$t_ij.save[,,(s-burnin)/thin] = t_ij
         out$d_ij.save[,,(s-burnin)/thin] = d_ij
