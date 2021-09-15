@@ -51,7 +51,9 @@ rmse = rep(NA, 50)
 tr_aucg = rep(NA, 50)
 tt_aucg = rep(NA, 50)
 tr_auct = rep(NA, 50)
+tt_auct = rep(NA, 50)
 tr_aucap = rep(NA, 50)
+tt_aucap = rep(NA, 50)
 seedsave = rep(NA, 50)
 for (i in 1:50) {
   res <- readRDS(paste0("~/BMC/BMC/data/sim1_new_BMC0_res_", i, ".RDS"))
@@ -59,11 +61,14 @@ for (i in 1:50) {
   tr_aucg[i] <- res$tr_aucg
   tt_aucg[i] <- res$tt_aucg
   tr_auct[i] <- res$tr_auct
+  tt_auct[i] <- res$tt_auct
   tr_aucap[i] <- res$tr_aucap
+  tt_aucap[i] <- res$tt_aucap
   seedsave[i] <- res$seed
 }
 saveRDS(list(rmse = rmse, tr_aucg = tr_aucg, tt_aucg = tt_aucg, 
-             tr_auct = tr_auct, tr_aucap = tr_aucap, 
+             tr_auct = tr_auct, tt_auct = tt_auct, 
+             tr_aucap = tr_aucap, tt_aucap = tt_aucap,
              seedsave = seedsave), 
         "~/BMC/BMC/data/sim1_new_BMC0_all.RDS")
 
@@ -72,7 +77,9 @@ rmse = rep(NA, 50)
 tr_aucg = rep(NA, 50)
 tt_aucg = rep(NA, 50)
 tr_auct = rep(NA, 50)
+tt_auct = rep(NA, 50)
 tr_aucap = rep(NA, 50)
+tt_aucap = rep(NA, 50)
 seedsave = rep(NA, 50)
 for (i in 1:50) {
   res <- readRDS(paste0("~/BMC/BMC/data/sim1_new_BMCi_res_", i, ".RDS"))
@@ -80,11 +87,14 @@ for (i in 1:50) {
   tr_aucg[i] <- res$tr_aucg
   tt_aucg[i] <- res$tt_aucg
   tr_auct[i] <- res$tr_auct
+  tt_auct[i] <- res$tt_auct
   tr_aucap[i] <- res$tr_aucap
+  tt_aucap[i] <- res$tt_aucap
   seedsave[i] <- res$seed
 }
 saveRDS(list(rmse = rmse, tr_aucg = tr_aucg, tt_aucg = tt_aucg, 
-             tr_auct = tr_auct, tr_aucap = tr_aucap, 
+             tr_auct = tr_auct, tt_auct = tt_auct, 
+             tr_aucap = tr_aucap, tt_aucap = tt_aucap,
              seedsave = seedsave), 
         "~/BMC/BMC/data/sim1_new_BMCi_all.RDS")
 
@@ -93,7 +103,9 @@ rmse = rep(NA, 50)
 tr_aucg = rep(NA, 50)
 tt_aucg = rep(NA, 50)
 tr_auct = rep(NA, 50)
+tt_auct = rep(NA, 50)
 tr_aucap = rep(NA, 50)
+tt_aucap = rep(NA, 50)
 seedsave = rep(NA, 50)
 for (i in 1:50) {
   res <- readRDS(paste0("~/BMC/BMC/data/sim1_new_BMCj_res_", i, ".RDS"))
@@ -101,11 +113,14 @@ for (i in 1:50) {
   tr_aucg[i] <- res$tr_aucg
   tt_aucg[i] <- res$tt_aucg
   tr_auct[i] <- res$tr_auct
+  tt_auct[i] <- res$tt_auct
   tr_aucap[i] <- res$tr_aucap
+  tt_aucap[i] <- res$tt_aucap
   seedsave[i] <- res$seed
 }
 saveRDS(list(rmse = rmse, tr_aucg = tr_aucg, tt_aucg = tt_aucg, 
-             tr_auct = tr_auct, tr_aucap = tr_aucap, 
+             tr_auct = tr_auct, tt_auct = tt_auct, 
+             tr_aucap = tr_aucap, tt_aucap = tt_aucap,
              seedsave = seedsave), 
         "~/BMC/BMC/data/sim1_new_BMCj_all.RDS")
 
