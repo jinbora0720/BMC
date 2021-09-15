@@ -20,7 +20,7 @@ u_ij.post = function(le, alpha, t_ij) {
   return(lea+qnorm(u))
 }
 
-# pi_t if heter_simpler = TRUE
+# pi_t if hetero_simpler = TRUE
 pi_t.post = function(t_ij, m_j, a_p, b_p) {
   nt = sum(t_ij==1, na.rm=TRUE)
   return(rbeta(1, a_p+nt, b_p+sum(m_j)-nt))

@@ -61,7 +61,7 @@ Rcpp::NumericMatrix lam_lin_simpler(mat eta, mat Plam, vec ps, int k, int p, mat
   mat lambda(p, k);
   mat eta2 = eta.t() * eta;    // prepare eta crossproduct before the loop
   for(int j=0; j < p; ++j) {
-    mat Llamt = trimatu(chol(diagmat(Plam.row(j)) + ps(j)*eta2));
+    mat Llamt = trimatu(chol(symmatu(diagmat(Plam.row(j)) + ps(j)*eta2)));
     mat Llam = trimatl(Llamt.t());
     lambda.row(j) = (solve(Llamt, randn<vec>(k)) +
       solve(Llamt, solve(Llam, ps(j) * eta.t() * Y.col(j)))).t();

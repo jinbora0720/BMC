@@ -132,8 +132,10 @@ arma::mat loglikecpp(const List& e, const arma::mat& d_ij, const List& orgX, con
 
 // [[Rcpp::export]]
 Rcpp::List gbcpp_post(const List& Y, const List& X,
-                      const arma::mat& pi_ij, const arma::mat& invSigj, const arma::mat& Sigj, const arma::vec& sigj_sq,
-                      const List& idx_j, IntegerVector m_j, IntegerMatrix Start, IntegerMatrix End) {
+                      const arma::mat& pi_ij, const arma::mat& invSigj, 
+                      const arma::mat& Sigj, const arma::vec& sigj_sq,
+                      const List& idx_j, IntegerVector m_j, 
+                      IntegerMatrix Start, IntegerMatrix End) {
   int J = pi_ij.n_cols;
   int m = pi_ij.n_rows;
   int p;
