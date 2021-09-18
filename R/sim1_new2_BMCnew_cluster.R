@@ -92,7 +92,7 @@ iter <- taskID <- as.integer(Sys.getenv('SLURM_ARRAY_TASK_ID'))
   sigsq_xi = 1
   
   mu_alpha = c(0,1)
-  sigsq_alpha = c(5,5)
+  sigsq_alpha = c(2,2)
   
   hyper = list(a = a, R = R, v_d = v_d,
                mu_xi = mu_xi, sigsq_xi = sigsq_xi,
@@ -200,5 +200,4 @@ iter <- taskID <- as.integer(Sys.getenv('SLURM_ARRAY_TASK_ID'))
                tr_auct = tr_auct, tt_auct = tt_auct,
                tr_aucap = tr_aucap, tt_aucap = tt_aucap,
                alpha = alpha.postm, xi = xi.postm, seed = seed), file.path(out_name))
-
-
+  
