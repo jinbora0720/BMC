@@ -28,7 +28,7 @@ saveRDS(list(rmse = rmse, tr_aucg = tr_aucg, tt_aucg = tt_aucg,
              alpha = alpha, xi = xi, seedsave = seedsave), 
         "~/BMC/BMC/data/sim1_new2_BMCnew_all.RDS")
 
-# BMC0
+# BMCi
 rmse = rep(NA, 30)
 tr_aucg = rep(NA, 30)
 tt_aucg = rep(NA, 30)
@@ -38,7 +38,7 @@ tr_aucap = rep(NA, 30)
 tt_aucap = rep(NA, 30)
 seedsave = rep(NA, 30)
 for (i in 1:30) {
-  res <- readRDS(paste0("~/BMC/BMC/data/sim1_new2_BMC0_res_", i, ".RDS"))
+  res <- readRDS(paste0("~/BMC/BMC/data/sim1_new2_BMCi_res_", i, ".RDS"))
   rmse[i] <- res$rmse
   tr_aucg[i] <- res$tr_aucg
   tt_aucg[i] <- res$tt_aucg
@@ -52,4 +52,4 @@ saveRDS(list(rmse = rmse, tr_aucg = tr_aucg, tt_aucg = tt_aucg,
              tr_auct = tr_auct, tt_auct = tt_auct, 
              tr_aucap = tr_aucap, tt_aucap = tt_aucap,
              seedsave = seedsave), 
-        "~/BMC/BMC/data/sim1_new2_BMC0_all.RDS")
+        "~/BMC/BMC/data/sim1_new2_BMCi_all.RDS")
