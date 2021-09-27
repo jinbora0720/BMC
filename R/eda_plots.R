@@ -1,21 +1,22 @@
 # EDA plots 
 # from obesity: Figure S1
-# from neurodevelopmental disorders: Figure 1, S2, S3, S4
+# from neurodevelopmental disorders: Figure 1, S2, S3
+rm(list = ls())
 
 # dependencies 
 library(tidyverse)
 
 # call data 
-path <- "~/Documents/BoraJin2018~/Research/DoseResponse/BMC/"
+path <- "~/BMC/"
 datalist <- readRDS(paste0(path, "data/datalist.rds"))
 neuro_data <- datalist$neuro_data
 obese_data <- datalist$obese_data
 
 # arrage data
-obese_meta <- readRDS(paste0(path, "data/obese_meta.rds"))
+obese_meta <- readRDS(paste0(path, "data/obese_meta.RDS"))
 K_ij <- obese_meta$K_ij
 
-neuro_meta <- readRDS(paste0(path, "data/neuro_meta.rds"))
+neuro_meta <- readRDS(paste0(path, "data/neuro_meta.RDS"))
 uniq_chnm <- neuro_meta$uniq_chnm
 uniq_aenm <- neuro_meta$uniq_aenm
 J <- length(uniq_aenm)
@@ -24,6 +25,24 @@ Start <- neuro_meta$Start
 End <- neuro_meta$End
 Y <- neuro_meta$Y
 orgX <- lapply(neuro_meta$orgData, function(x) x[,1])
+
+#----------------------------------------------------------------------------------------------------------------------------------
+# Figure 1: Detailed illustration of the ToxCast/Tox21 data structure. 
+chnm_sub <- uniq_chnm[c(9, 11, 16, 22, 23, 25, 27)]
+aenm_sub <- uniq_aenm[c(2, 30, 101, 120, 125)]
+neuro_sub <- neuro_data %>% filter(chnm %in% chnm_sub, aenm %in% aenm_sub) %>% select(logc, resp, chnm, aenm) 
+neuro_sub$aenm <- plyr::revalue(neuro_sub$aenm, c("NVS_ADME_hCYP19A1_Activator"="NVS_ADME_\nhCYP19A1_Activator", 
+                                                  "CEETOX_H295R_OHPROG_up"="CEETOX_H295R_\nOHPROG_up", 
+                                                  "TOX21_AR_LUC_MDAKB2_Antagonist"="TOX21_AR_LUC_\nMDAKB2_Antagonist", 
+                                                  "OT_AR_ARSRC1_0960"="OT_AR_\nARSRC1_0960")) 
+neuro_sub$chnm <- plyr::revalue(neuro_sub$chnm, c("Diethyl phthalate"="Diethyl\nphthalate",
+                                                  "Dibutyl phthalate"="Dibutyl\nphthalate", 
+                                                  "Cypermethrin"="Cyper-\nmethrin"))
+neuro_sub %>% 
+  ggplot() + geom_point(aes(logc, resp)) + facet_grid(chnm~aenm, scales="free") +
+  theme_bw() + 
+  labs(x=expression(paste("Dose (", log[10], " ", mu, "M)", sep="")), y="Response") +
+  theme(axis.title= element_text(size=20))
 
 #----------------------------------------------------------------------------------------------------------------------------------
 # Figure S1: Heat map of the number of observations in ToxCast/Tox21 data for obesity
@@ -45,25 +64,7 @@ reshape2::melt(K_ij) %>%
 rm(obese_meta, K_ij)
 
 #----------------------------------------------------------------------------------------------------------------------------------
-# Figure 1: Detailed illustration of the ToxCast/Tox21 data structure. 
-chnm_sub <- uniq_chnm[c(9, 11, 16, 22, 23, 25, 27)]
-aenm_sub <- uniq_aenm[c(2, 30, 101, 120, 125)]
-neuro_sub <- neuro_data %>% filter(chnm %in% chnm_sub, aenm %in% aenm_sub) %>% select(logc, resp, chnm, aenm) 
-neuro_sub$aenm <- plyr::revalue(neuro_sub$aenm, c("NVS_ADME_hCYP19A1_Activator"="NVS_ADME_\nhCYP19A1_Activator", 
-                                                  "CEETOX_H295R_OHPROG_up"="CEETOX_H295R_\nOHPROG_up", 
-                                                  "TOX21_AR_LUC_MDAKB2_Antagonist"="TOX21_AR_LUC_\nMDAKB2_Antagonist", 
-                                                  "OT_AR_ARSRC1_0960"="OT_AR_\nARSRC1_0960")) 
-neuro_sub$chnm <- plyr::revalue(neuro_sub$chnm, c("Diethyl phthalate"="Diethyl\nphthalate",
-                                                  "Dibutyl phthalate"="Dibutyl\nphthalate", 
-                                                  "Cypermethrin"="Cyper-\nmethrin"))
-neuro_sub %>% 
-  ggplot() + geom_point(aes(logc, resp)) + facet_grid(chnm~aenm, scales="free") +
-  theme_bw() + 
-  labs(x=expression(paste("Dose (", log[10], " ", mu, "M)", sep="")), y="Response") +
-  theme(axis.title= element_text(size=20))
-
-#----------------------------------------------------------------------------------------------------------------------------------
-# Figure S3: Scatter plots of two chemicals on TOX21_ERa_LUC_BG1_Agonist
+# Figure S2: Scatter plots of two chemicals on TOX21_ERa_LUC_BG1_Agonist
 i <- which(uniq_chnm == "Di-n-octyl phthalate")
 j <- which(uniq_aenm == "TOX21_ERa_LUC_BG1_Agonist")
 
@@ -91,27 +92,7 @@ t2 <- data.frame(resp = Y[[j]][Start[inew,j]:End[inew,j]],
 gridExtra::grid.arrange(t1, t2, nrow=1)
 
 #----------------------------------------------------------------------------------------------------------------------------------
-# Figure S2: Histogram of the number of unique doses tested. 
-neuro_data %>% group_by(casn, aenm) %>% summarise(n_dose = length(unique(logc))) %>% 
-  ggplot() + geom_histogram(aes(n_dose), fill="#666666", col="black", bins = 30) + 
-  theme_bw() + 
-  geom_vline(aes(xintercept=8), col="red") + 
-  scale_x_continuous(breaks=seq(0,22,2)) + 
-  theme(aspect.ratio = 0.6, axis.title = element_text(size=20)) + 
-  labs(x="Number of unique doses", y="Count of chemical-\nassay endpoint pairs")
-
-# "median number of unique doses is 8"
-neuro_dose <- neuro_data %>% group_by(casn, aenm) %>% summarise(n_dose = length(unique(logc))) 
-median(neuro_dose$n_dose)
-
-# "30% of them are without replicates" 
-neuro_rep <- neuro_data %>% group_by(casn, aenm, logc) %>% summarise(n_rep = n()) 
-sum(neuro_rep$n_rep == 1)/nrow(neuro_rep)
-
-rm(neuro_dose, neuro_rep)
-
-#----------------------------------------------------------------------------------------------------------------------------------
-# Figure S4: Scatter plot of the responses by assay endpoint. 
+# Figure S3: Scatter plot of the responses by assay endpoint. 
 data.frame(res=unlist(Y[75:J]), aenm=rep(75:J, apply(End[,75:J], 2, max))) %>% 
   ggplot() + geom_point(aes(as.factor(aenm), res)) + 
   theme_bw() + 

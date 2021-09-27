@@ -1,37 +1,35 @@
 Data Dictionary
 ================
 
-## Data Structure
+## Main data
 
 `datalist.rds` is a list containing `neuro_data`, `obese_data`, and
 `hit_vec`.
 
-  - `neuro_data` is the processed ToxCast/Tox21 data with 30 chemicals
+-   `neuro_data` is the processed ToxCast/Tox21 data with 30 chemicals
     and 131 assay endpoints relevant to neurodevelopmental disorders.
-  - `obese_data` is the processed ToxCast/Tox21 data with 30 chemicals
+-   `obese_data` is the processed ToxCast/Tox21 data with 30 chemicals
     and 271 obesity-related assay endpoints.
-  - `hit_vec` includes hit-call values based on invitroDBv2 of EPA.
+-   `hit_vec` includes hit-call values based on invitroDBv2 of EPA.
 
-## Variables
+### Variables
 
 For `neuro_data` and `obese_data`,
 
-  - `aeid`: assay endpoint ID
-  - `aenm`: assay endpoint name
-  - `casn`: CAS registry number
-  - `code`: C followed by `casn` without hyphens
-  - `chnm`: chemical name
-  - `logc`: log base 10 concentration
-  - `resp`: response value.
+-   `aeid`: assay endpoint ID
+-   `aenm`: assay endpoint name
+-   `casn`: CAS registry number
+-   `code`: C followed by `casn` without hyphens
+-   `chnm`: chemical name
+-   `logc`: log base 10 concentration
+-   `resp`: response value.
 
 `hit_vec` has
 
-  - `code`: C followed by `casn` without hyphens
-  - `aenm`: assay endpoint name
-  - `hitc`: hit-call value where 1 if active, 0 if inactive, -1 if
+-   `code`: C followed by `casn` without hyphens
+-   `aenm`: assay endpoint name
+-   `hitc`: hit-call value where 1 if active, 0 if inactive, -1 if
     cannot be determined, and NA if not tested.
-
-<!-- end list -->
 
 ``` r
 names(datalist)
@@ -44,3 +42,15 @@ neuro_data <- datalist$neuro_data
 obese_data <- datalist$neuro_data
 hit_vec <- datalist$hit_vec
 ```
+
+## Auxiliary data
+
+-   `assay_cutoff.RDS` contains assay endpoint (`aeid`)-specific
+    efficacy cutoff (`coff`) and baseline median absolute deviation
+    (`bmad`). Raw data are downloadable from
+    <https://epa.figshare.com/articles/dataset/ToxCast_and_Tox21_Data_Spreadsheet/6062503/3>
+    (version 3, posted on 2019/03/26).
+
+-   `Obese_Assays.xlsx` or `Neuro_Assays.xlsx` include detailed
+    information about assays used in ToxCast/Tox21 analysis. Variable
+    names are straightforward.
