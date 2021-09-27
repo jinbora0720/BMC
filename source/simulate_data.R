@@ -11,11 +11,14 @@ simulate_lambda = function(m, q, df=3, ad1=2.1, ad2=3.1) {
   return(matrix(rnorm(m*q, mean=0, sd=1/sqrt(Plam)), m, q))
 }
 
-generate_data = function(m, J, d=1, seed) {
+generate_data = function(m, J, d=1, q=2, xi=-1, alpha=c(-.5, .7), 
+                         delta_mean=2, df=3, seed=123) {
   # Assumes equal number of measurements (d) for each dose 
   # m: number of chemicals 
   # J: number of assay endpoints 
   # q: number of factors 
+  # xi: Pr(gamma_ij = 1) = pnorm(xi + Lambda x eta)
+  # alpha = (alpha0, alpha1): Pr(t_ij = 1) = pnorm(alpha0 + alpha1(Lambda x eta))
   
   set.seed(seed)
   
@@ -41,12 +44,12 @@ generate_data = function(m, J, d=1, seed) {
   }
   
   # Lambda, Eta
-  q = 2
-  Lambda = simulate_lambda(m, q)
+  Lambda = simulate_lambda(m=m, q=q, df=df)
   eta = matrix(rnorm(J*q), J, q)
+  le = tcrossprod(Lambda, eta)
   
-  pi_ij = pnorm(tcrossprod(Lambda, eta))
-  gamma_ij = matrix(rbinom(m*J, 1, pi_ij), m, J)
+  z_ij = matrix(rnorm(m*J, xi + le, 1), nrow = m, ncol = J)
+  gamma_ij = ifelse(z_ij > 0, 1, 0)
   for (j in 1:J) {
     gamma_ij[-idx_j[[j]], j] = NA
   }
@@ -65,15 +68,22 @@ generate_data = function(m, J, d=1, seed) {
   beta_pool[[3]] = c(0, 0, 0, 0, 0, 0, -0.5, -0.7, -2) # decreasing
   
   beta_ij = list()
-  beta_ij[1:floor(J/3)] = lapply(1:floor(J/3), function(j) {
-    matrix(beta_pool[[1]], p, m_j[j])
-  }) 
-  beta_ij[(1+floor(J/3)):(2*floor(J/3))] = lapply((1+floor(J/3)):(2*floor(J/3)), function(j) {
-    matrix(beta_pool[[2]], p, m_j[j])
-  }) 
-  beta_ij[(1+2*floor(J/3)):J] = lapply((1+2*floor(J/3)):J, function(j) {
-    matrix(beta_pool[[3]], p, m_j[j])
-  }) 
+  if (J > 2) {
+    beta_ij[1:floor(J/3)] = lapply(1:floor(J/3), function(j) {
+      matrix(beta_pool[[1]], p, m_j[j])
+    }) 
+    beta_ij[(1+floor(J/3)):(2*floor(J/3))] = lapply((1+floor(J/3)):(2*floor(J/3)), function(j) {
+      matrix(beta_pool[[2]], p, m_j[j])
+    }) 
+    beta_ij[(1+2*floor(J/3)):J] = lapply((1+2*floor(J/3)):J, function(j) {
+      matrix(beta_pool[[3]], p, m_j[j])
+    }) 
+  } else {
+    beta_ij[1:J] = lapply(1:J, function(j) {
+      matrix(beta_pool[[1]], p, m_j[j])
+    }) 
+  }
+  
   # let some (i,j) pairs to be non-active 
   for (j in 1:J) {
     for (i in 1:m_j[j]) {
@@ -82,11 +92,14 @@ generate_data = function(m, J, d=1, seed) {
   }
   
   # heteroscedasticity 
-  t_ij = d_ij = matrix(NA, m, J)
+  d_ij = matrix(NA, m, J)
+  W = alpha[1] + alpha[2]*le
+  u_ij = matrix(rnorm(m*J, W, 1), nrow = m, ncol = J)
+  t_ij = ifelse(u_ij > 0, 1, 0)
   for (j in 1:J) {
-    t_ij[idx_j[[j]],j] = rbinom(m_j[j], 1, 0.2)
+    t_ij[-idx_j[[j]],j] = NA
   }
-  d_ij[which(t_ij==1, arr.ind=TRUE)] = rnorm(sum(t_ij==1, na.rm=TRUE), 2, 0.1)
+  d_ij[which(t_ij==1, arr.ind=TRUE)] = rnorm(sum(t_ij==1, na.rm=TRUE), delta_mean, 0.1)
   d_ij[which(t_ij==0, arr.ind=TRUE)] = 0
   
   # Data
@@ -112,9 +125,12 @@ generate_data = function(m, J, d=1, seed) {
                 do.call("rbind", replicate(m, CX, simplify = FALSE)), 
                 simplify = FALSE)
   
-  return(list(simdata = list(orgX=orgX, orgY=orgY, X=X, K_ij=K_ij, m_j=m_j, idx_j=idx_j, Start=Start, End=End),
-              truth = list(q=q, Lambda=Lambda, eta=eta, gamma_ij=gamma_ij, rxf=rxf, 
-                           t_ij=t_ij, d_ij=d_ij, sigj_sq=sigj_sq)))
+  return(list(simdata = list(orgX=orgX, orgY=orgY, X=X, K_ij=K_ij, 
+                             m_j=m_j, idx_j=idx_j, Start=Start, End=End),
+              truth = list(Lambda=Lambda, eta=eta, 
+                           z_ij=z_ij, gamma_ij=gamma_ij, 
+                           rxf=rxf, 
+                           u_ij=u_ij, t_ij=t_ij, d_ij=d_ij, sigj_sq=sigj_sq)))
 }
 
 data_missing = function(simdata, prob_missing=NULL, missing_idx=NULL, seed) {
@@ -127,13 +143,14 @@ data_missing = function(simdata, prob_missing=NULL, missing_idx=NULL, seed) {
   if (is.null(missing_idx)) missing_idx = sample(m*J, floor(prob_missing*m*J))
   K_ij = simdata$K_ij
   K_ij[missing_idx] = 0
+  missing_idx2 = which(K_ij==0 & simdata$K_ij>0, arr.ind = TRUE)
   
   ## check whether there are chemicals/assay endpoints that are completely missing 
   if (sum(rowSums(K_ij)==0) > 0) {
     is = which(rowSums(K_ij)==0)
     js = rep(0,length(is))
     for (s in 1:length(is)) {
-      js[s] = sample(missing_idx[which(missing_idx[,1]==is[s]),2],1)
+      js[s] = sample(missing_idx2[which(missing_idx2[,1]==is[s]),2],1)
     }
     K_ij[cbind(is, js)] = simdata$K_ij[cbind(is, js)]
   }
@@ -141,11 +158,12 @@ data_missing = function(simdata, prob_missing=NULL, missing_idx=NULL, seed) {
     js = which(colSums(K_ij)==0)
     is = rep(0,length(js))
     for (s in 1:length(js)) {
-      is[s] = sample(missing_idx[which(missing_idx[,2]==js[s]),1],1)
+      is[s] = sample(missing_idx2[which(missing_idx2[,2]==js[s]),1],1)
     }
     K_ij[cbind(is, js)] = simdata$K_ij[cbind(is, js)]
   }
   
+  missing_idx2 = which(K_ij==0 & simdata$K_ij>0, arr.ind = TRUE)
   # index for tested chemicals for each assay endpoint 
   idx_j = apply(K_ij, 2, function(x) which(x>0))
   # number of chemicals for each assay endpoint 
@@ -162,7 +180,6 @@ data_missing = function(simdata, prob_missing=NULL, missing_idx=NULL, seed) {
     X = simdata$X
     orgX = simdata$orgX
     orgY = simdata$orgY
-    missing_idx2 = which(K_ij==0 & simdata$K_ij>0, arr.ind = TRUE)
     for (s in 1:nrow(missing_idx2)) {
       j = missing_idx2[s,2]
       i = which(simdata$idx_j[[j]] == missing_idx2[s,1])
@@ -181,7 +198,6 @@ data_missing = function(simdata, prob_missing=NULL, missing_idx=NULL, seed) {
     orgX = simdata$orgX
     orgY = simdata$orgY
     rxf = simdata$rxf
-    missing_idx2 = which(K_ij==0 & simdata$K_ij>0, arr.ind = TRUE)
     for (s in 1:nrow(missing_idx2)) {
       j = missing_idx2[s,2]
       i = which(simdata$idx_j[[j]] == missing_idx2[s,1])

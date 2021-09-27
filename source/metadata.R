@@ -1,4 +1,6 @@
-metadata <- function(data) {
+metadata <- function(data, aeid_coff = NULL) {
+  # aeid_coff is a data frame with aeid and coff
+  
   ae <- distinct(data[c("aeid","aenm")])
   J <- nrow(ae)
   uniq_aeid <- sort(ae$aeid)
@@ -8,6 +10,10 @@ metadata <- function(data) {
   m <- nrow(ch)
   uniq_casn <- sort(ch$casn)
   uniq_chnm <- ch[order(ch$casn),2]
+  
+  if (!is.null(aeid_coff)) {
+    coff_ij <- matrix(0, m, J)
+  }
   
   K_ij <- reshape2::dcast(data, casn ~ aeid, fun.aggregate = length, value.var = "resp")
   rownames(K_ij) <- K_ij[,1]
@@ -28,6 +34,9 @@ metadata <- function(data) {
   orgData <- list()
   X = Y <- list() 
   for (j in 1:J) {
+    if (!is.null(aeid_coff)) {
+      coff <- aeid_coff[which(aeid_coff$aeid == uniq_aeid[j]),2]
+    }
     orgData[[j]] <- matrix(NA, max(End[,j]), 2)
     X[[j]] <- matrix(NA, max(End[,j]), p)
     Y[[j]] <- rep(NA, max(End[,j]))
@@ -39,11 +48,26 @@ metadata <- function(data) {
       Y[[j]][Start[i,j]:End[i,j]] <- if (length(data_ij$resp)==1) data_ij$resp else 
         if (var(data_ij$resp)==0) scale(data_ij$resp, center=TRUE, scale=FALSE) else  
           scale(data_ij$resp)
+      if (!(is.null(aeid_coff))) {
+        coff_ij[idx_j[[j]][i],j] <- if (length(data_ij$resp)==1) coff else 
+          if (var(data_ij$resp)==0) abs(coff - mean(data_ij$resp)) else  
+            abs((coff - mean(data_ij$resp))/sd(data_ij$resp))
+      }
     }
   }
   
-  return(list(uniq_aeid = uniq_aeid, uniq_aenm = uniq_aenm, 
-              uniq_casn = uniq_casn, uniq_chnm = uniq_chnm, 
-              casn_j = casn_j, idx_j = idx_j, m_j = m_j, 
-              K_ij = K_ij, Start = Start, End = End, orgData = orgData, X = X, Y = Y))
+  if (is.null(aeid_coff)) {
+    return(list(uniq_aeid = uniq_aeid, uniq_aenm = uniq_aenm, 
+                uniq_casn = uniq_casn, uniq_chnm = uniq_chnm, 
+                casn_j = casn_j, idx_j = idx_j, m_j = m_j, 
+                K_ij = K_ij, Start = Start, End = End, 
+                orgData = orgData, X = X, Y = Y))
+  } else {
+    return(list(uniq_aeid = uniq_aeid, uniq_aenm = uniq_aenm, 
+                uniq_casn = uniq_casn, uniq_chnm = uniq_chnm, 
+                casn_j = casn_j, idx_j = idx_j, m_j = m_j, 
+                K_ij = K_ij, Start = Start, End = End, 
+                orgData = orgData, X = X, Y = Y, 
+                coff_ij = coff_ij))
+  }
 }

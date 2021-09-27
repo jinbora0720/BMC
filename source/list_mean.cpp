@@ -1,13 +1,11 @@
-#include "RcppArmadillo.h"
 #ifdef _OPENMP
 #include <omp.h>
 #endif
 
-// From Michele Peruzzi 
-// https://github.com/mkln/meshgp/blob/master/src/list_mean.cpp
-
-using namespace std;
 // [[Rcpp::depends(RcppArmadillo)]]
+#include "RcppArmadillo.h"
+using namespace std;
+
 
 //[[Rcpp::export]]
 arma::mat list_mean(const arma::field<arma::mat>& x){

@@ -10,7 +10,40 @@ using namespace arma;
 
 
 // [[Rcpp::export]]
-Rcpp::NumericMatrix eta_lin(mat lambda, vec ps, int k, int n, mat Y){
+Rcpp::NumericMatrix eta_lin(mat lambda, vec ps, int k, int n, mat Y, 
+                            vec alpha, mat u_ji){ // BJ: alpha and u_ji = t(u_ij) included
+  // --- UPDATE eta --- //
+  int p = Y.n_cols;
+  mat Lmsg = lambda.each_col() % ps;
+  mat Veta1 = eye<mat>(k,k) + (1 + pow(alpha(1),2))*(Lmsg.t() * lambda);
+  mat S = inv(trimatu(chol(Veta1)));
+  mat Veta = S * S.t();
+  mat Meta = (Y + alpha(1)*u_ji - alpha(0)*alpha(1)*ones<mat>(n, p))* Lmsg * Veta;
+  mat noise = randn<mat>(n, k);
+  mat eta = Meta + noise * S.t();
+  return Rcpp::wrap(eta);
+}
+
+// [[Rcpp::export]]
+Rcpp::NumericMatrix lam_lin(mat eta, mat Plam, vec ps, int k, int p, mat Y, 
+                            vec alpha, mat u_ji){ // BJ: alpha and u_ji = t(u_ij) included
+  // --- UPDATE lambda --- //
+  int n = Y.n_rows;
+  mat lambda(p, k);
+  mat eta2 = eta.t() * eta;    // prepare eta crossproduct before the loop
+  for(int j=0; j < p; ++j) {
+    mat Llamt = trimatu(chol(diagmat(Plam.row(j)) + ps(j)*(1 + pow(alpha(1),2))*eta2));
+    mat Llam = trimatl(Llamt.t());
+    lambda.row(j) = (solve(Llamt, randn<vec>(k)) +
+      solve(Llamt, solve(Llam, (ps(j) * eta.t() * Y.col(j) + 
+      alpha(1) * eta.t() * u_ji.col(j) -
+      alpha(0) * alpha(1) * eta.t() * ones<vec>(n))))).t();
+  }
+  return Rcpp::wrap(lambda);
+}
+
+// [[Rcpp::export]]
+Rcpp::NumericMatrix eta_lin_simpler(mat lambda, vec ps, int k, int n, mat Y){
   // --- UPDATE eta --- //
   mat Lmsg = lambda.each_col() % ps;
   mat Veta1 = eye<mat>(k,k) + Lmsg.t() * lambda;
@@ -23,12 +56,12 @@ Rcpp::NumericMatrix eta_lin(mat lambda, vec ps, int k, int n, mat Y){
 }
 
 // [[Rcpp::export]]
-Rcpp::NumericMatrix lam_lin(mat eta, mat Plam, vec ps, int k, int p, mat Y){
+Rcpp::NumericMatrix lam_lin_simpler(mat eta, mat Plam, vec ps, int k, int p, mat Y){
   // --- UPDATE lambda --- //
   mat lambda(p, k);
   mat eta2 = eta.t() * eta;    // prepare eta crossproduct before the loop
   for(int j=0; j < p; ++j) {
-    mat Llamt = trimatu(chol(diagmat(Plam.row(j)) + ps(j)*eta2));
+    mat Llamt = trimatu(chol(symmatu(diagmat(Plam.row(j)) + ps(j)*eta2)));
     mat Llam = trimatl(Llamt.t());
     lambda.row(j) = (solve(Llamt, randn<vec>(k)) +
       solve(Llamt, solve(Llam, ps(j) * eta.t() * Y.col(j)))).t();

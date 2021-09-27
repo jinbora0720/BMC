@@ -13,28 +13,46 @@
 # hyper must have v_d (numeric, normal variance for the amount of heteroscedasticity delta_ij).
 # init must have q (numeric, initial or fixed number of factors).
 # hetero = TRUE to model heteroscedasticity. 
-# adapt = TRUE to adapt the number of factors at each iteration.
-# simpler = c("bmc0", "bmci", "bmcj") for simpler structure of gamma_ij.
+# hetero_simpler = FALSE to model t_ij with latent factors as well. 
+# gamma_simpler = c("bmc0", "bmci", "bmcj") for simpler structure of gamma_ij.
+# mgsp_adapt = TRUE to adapt the number of factors at each iteration.
 # verbose = TRUE to show progress bars. 
 
 bmc <- function(Data = list(), MCMC = list(thin=1, burnin=0, save=1000), 
                 hyper = list(), init = list(), 
-                hetero = TRUE, adapt = TRUE, simpler = FALSE, verbose = TRUE) {
+                hetero = TRUE, hetero_simpler = FALSE, 
+                gamma_simpler = FALSE, mgsp_adapt = TRUE, 
+                update_xi = FALSE, apply_cutoff = FALSE, verbose = TRUE) {
 
   ##################
   # to get started #
   ##################
-  sp <- any(simpler %in% c("bmc0", "bmci", "bmcj"))
-  if (adapt & sp) stop("Adaptive number of factors applies for BMC only.")
+  sp <- any(gamma_simpler %in% c("bmc0", "bmci", "bmcj"))
+  if (sp & mgsp_adapt) {
+    warning("Adaptive mgsp will be ignored.")
+    mgsp_adapt = FALSE
+  }
+  if (sp & update_xi) {
+    warning("xi will be ignored.")
+    update_xi = FALSE
+  }
+  if (sp & hetero & !hetero_simpler) {
+    stop("hetero_simpler should be TRUE when gamma_simpler is specified.")
+  }
   
-  ## functions for simpler 
-  if (simpler == "bmc0") {
+  if (!hetero & hetero_simpler) {
+    warning("Heteroscedasticity will be ignored.")
+    hetero_simpler = FALSE
+  }
+  
+  ## functions for gamma_simpler 
+  if (gamma_simpler == "bmc0") {
     pi.post = function(gamma_ij, m_j) {
       m = nrow(gamma_ij); J = ncol(gamma_ij)
       RCgam = sum(gamma_ij, na.rm=TRUE)
-      return(matrix(rbeta(m*J, 1+RCgam, 1+sum(m_j)-RCgam), m, J))
+      return(matrix(rbeta(1, 1+RCgam, 1+sum(m_j)-RCgam), m, J))
     }
-  } else if (simpler == "bmci") {
+  } else if (gamma_simpler == "bmci") {
     pi.post = function(gamma_ij, idx_j) {
       m = nrow(gamma_ij); J = ncol(gamma_ij)
       J_i = sapply(1:m, function(i) sum(unlist(idx_j)==i))
@@ -49,6 +67,10 @@ bmc <- function(Data = list(), MCMC = list(thin=1, burnin=0, save=1000),
       pi_j = rbeta(J, 1+CSgam, 1+m_j-CSgam)
       return(t(matrix(rep(pi_j, m), J, m)))
     }
+  }
+  
+  if (apply_cutoff & is.null(hyper$cutoff)) {
+    stop("No cutoff is provided.")
   }
   
   ########
@@ -153,6 +175,38 @@ bmc <- function(Data = list(), MCMC = list(thin=1, burnin=0, save=1000),
     v_d = hyper$v_d             # normal variance for the amount of heteroscedasticity delta_ij 
   }
   
+  if (is.null(hyper$cutoff)) {
+    cutoff = matrix(0, m, J)
+  } else {
+    cutoff = hyper$cutoff
+  }
+  
+  if (hetero & !hetero_simpler) {
+    if (is.null(hyper$sigsq_alpha)) {
+      sigsq_alpha = rep(10, 2)
+    } else {
+      sigsq_alpha = hyper$sigsq_alpha
+    }
+    if (is.null(hyper$mu_alpha)) {
+      mu_alpha = rep(0, 2)
+    } else {
+      mu_alpha = hyper$mu_alpha
+    }
+  }
+  
+  if (update_xi) {
+    if (is.null(hyper$sigsq_xi)) {
+      sigsq_xi = 10
+    } else {
+      sigsq_xi = hyper$sigsq_xi
+    }
+    if (is.null(hyper$mu_xi)) {
+      mu_xi = 0
+    } else {
+      mu_xi = hyper$mu_xi
+    }
+  }
+  
   ##################
   # initial values #
   ##################
@@ -160,9 +214,14 @@ bmc <- function(Data = list(), MCMC = list(thin=1, burnin=0, save=1000),
     q = init$q                                                  # initial or fixed number of factors
     ## for factor model:
     if (is.null(init$Lambda)) {
-      Lambda = matrix(1, nrow = m, ncol = q)                    # factor loadings
+      Lambda = matrix(rnorm(m*q), nrow = m, ncol = q)                    # factor loadings
     } else {
       Lambda = init$Lambda
+    }
+    if (is.null(init$eta)) {
+      eta = matrix(rnorm(J*q), nrow = J, ncol = q)                   # latent factors
+    } else {
+      eta = init$eta
     }
     if (is.null(init$delta)) {
       delta = c(rgamma(1,ad1,bd1), rgamma(q-1,ad2,bd2))         # global shrinkage coefficients multipliers
@@ -172,16 +231,25 @@ bmc <- function(Data = list(), MCMC = list(thin=1, burnin=0, save=1000),
     psijh = matrix(rgamma(m*q, df/2, df/2), nrow = m, ncol = q) # local shrinkage parameters 
     tauh = cumprod(delta)                                       # global shrinkage parameters 
     Plam = t(t(psijh) * (tauh))                                 # precision of loadings  
-    z_ij = t(mvrnorm(J, mu=rep(0,m), Sigma=tcrossprod(Lambda)+diag(1,m)))
+    if (J == 1) {
+      z_ij = matrix(mvrnorm(J, mu=rep(0,m), Sigma=tcrossprod(Lambda)+diag(1,m)), ncol = 1)
+    } else {
+      z_ij = t(mvrnorm(J, mu=rep(0,m), Sigma=tcrossprod(Lambda)+diag(1,m)))
+    }
+    if (is.null(init$xi)) {
+      xi = 0
+    } else {
+      xi = init$xi # xi initial
+    }
     if (is.null(init$gamma_ij)) {
       gamma_ij = matrix(rbinom(m*J, 1, pnorm(z_ij)), m, J)
       for (j in 1:J) {
-        z_ij[-idx_j[[j]],j] = NA
         gamma_ij[-idx_j[[j]],j] = NA
       }
     } else {
       gamma_ij = init$gamma_ij
     }
+    z_ij[is.na(gamma_ij)] = NA
   } else {
     if (is.null(init$gamma_ij)) {
       gamma_ij = matrix(rbinom(m*J, 1, 0.5), m, J)
@@ -227,21 +295,35 @@ bmc <- function(Data = list(), MCMC = list(thin=1, burnin=0, save=1000),
     sigj_sq = init$sigj_sq
   }
   
+  ## heteroscedasticity:
   if (hetero) {
-    ## heteroscedasticity:
-    if (is.null(init$pi_t)) {
-      pi_t = rbeta(1, a_p, b_p)
-    } else {
-      pi_t = init$pi_t
-    }
-    if (is.null(init$t_ij)) {
-      t_ij = matrix(NA, m, J)
-      for (j in 1:J) {
-        t_ij[idx_j[[j]],j] = rbinom(m_j[j], 1, pi_t)
+    if (hetero_simpler) {
+      if (is.null(init$pi_t)) {
+        pi_t = rbeta(1, a_p, b_p)
+      } else {
+        pi_t = init$pi_t
+      }
+      if (is.null(init$t_ij)) {
+        t_ij = matrix(NA, m, J)
+        for (j in 1:J) {
+          t_ij[idx_j[[j]],j] = rbinom(m_j[j], 1, pi_t)
+        }
+      } else {
+        t_ij = init$t_ij 
       }
     } else {
-      t_ij = init$t_ij 
+      ## factor model in hetero
+      alpha = c(0, 1)
+      le = tcrossprod(Lambda, eta) 
+      W = alpha[1] + alpha[2]*le
+      u_ij = W + matrix(rnorm(m*J), nrow = m, ncol = J)
+      t_ij = matrix(rbinom(m*J, 1, pnorm(W)), m, J)
+      for (j in 1:J) {
+        u_ij[-idx_j[[j]],j] = NA
+        t_ij[-idx_j[[j]],j] = NA
+      }
     }
+    
     if (is.null(init$d_ij)) {
       d_ij = matrix(NA, m, J)
       d_ij[which(t_ij==1, arr.ind=TRUE)] = rnorm(sum(t_ij==1, na.rm=TRUE), 0, sqrt(v_d))
@@ -256,6 +338,9 @@ bmc <- function(Data = list(), MCMC = list(thin=1, burnin=0, save=1000),
   ################
   out = list() 
   out$gamma_ij.save = array(NA, dim = c(m,J,save))
+  if (apply_cutoff) {
+    out$kappa_ij.save = array(NA, dim = c(m,J,save))
+  }
   out$beta_ij.save = list()
   for (j in 1:J) {
     out$beta_ij.save[[j]] = array(NA, dim=c(p, m_j[j], save))
@@ -265,12 +350,19 @@ bmc <- function(Data = list(), MCMC = list(thin=1, burnin=0, save=1000),
   if (sp) { 
     out$pi_ij.save = array(NA, dim = c(m,J,save)) 
   } else {
+    if (update_xi) {
+      out$xi.save = rep(0, save) # xi added
+    }
     out$Lambda.save = list()
     out$eta.save = list()
     out$covMean = matrix(0, m, m)
   }
   if (hetero) {
-    out$pi_t.save = rep(NA, save)
+    if (!hetero_simpler) {
+      out$alpha.save = matrix(0, 2, save)
+    } else {
+      out$pi_t.save = rep(0, save)
+    }
     out$t_ij.save = array(NA, dim = c(m,J,save))
     out$d_ij.save = array(NA, dim = c(m,J,save))
     out$accept = 0
@@ -293,7 +385,14 @@ bmc <- function(Data = list(), MCMC = list(thin=1, burnin=0, save=1000),
       eps = ProdRes(Y, X, beta_ij, Start, End, m_j)
       
       # update t_ij, d_ij, pi_t, v_d related to heteroscedasticity
-      pi_t = pi_t.post(t_ij, m_j, a_p, b_p)
+      if (hetero_simpler) {
+        pi_t = pi_t.post(t_ij, m_j, a_p, b_p)
+      } else {
+        alpha = alpha.post(le, u_ij, mu_alpha, sigsq_alpha)
+        u_ij = u_ij.post(le, alpha, t_ij) # with NAs
+        pi_t = pnorm(alpha[1] + alpha[2]*le)
+      }
+
       td_ij = td_ij.post(eps, orgX, sigj_sq, pi_t, v_d, t_ij, d_ij, idx_j, m_j, Start, End)
       t_ij = td_ij$t_ij
       d_ij = td_ij$d_ij
@@ -304,25 +403,33 @@ bmc <- function(Data = list(), MCMC = list(thin=1, burnin=0, save=1000),
     } 
     
     if (sp) {
-      if (simpler == "bmci") {
+      if (gamma_simpler == "bmci") {
         pi_ij = pi.post(gamma_ij, idx_j)
       } else { pi_ij = pi.post(gamma_ij, m_j) }
     } else {
       # update lambda, eta, z_ij and pi_ij
-      fm = linearMGSP(t(z_ij), q, Lambda, delta, tauh, Plam, df, ad1, bd1, ad2, bd2, s, 
-                      adapt=adapt, prop=1, epsilon=1e-3)
+      if (hetero & !hetero_simpler) {
+        fm = linearMGSP(t(z_ij)-xi, q, Lambda, delta, tauh, Plam, df, ad1, bd1, 
+                        ad2, bd2, s, alpha, t(u_ij),
+                        adapt=mgsp_adapt, prop=1, epsilon=1e-3) # xi deducted
+      } else {
+        fm = linearMGSP_simpler(t(z_ij)-xi, q, Lambda, delta, tauh, Plam, df, 
+                                ad1, bd1, ad2, bd2, s, 
+                                adapt=mgsp_adapt, prop=1, epsilon=1e-3)
+      }
       Lambda = fm$Lambda
       eta = fm$eta
+      le = tcrossprod(Lambda, eta) 
       delta = fm$delta
       tauh = fm$tauh
       Plam = fm$Plam
       Omega = fm$Omega
-      if (adapt) { q = fm$k }
-      z_ij = z_ij.post(Lambda, eta, gamma_ij)
-      for (j in 1:J) {
-        z_ij[-idx_j[[j]],j] = NA
+      if (mgsp_adapt) { q = fm$k }
+      z_ij = z_ij.post(xi+le, gamma_ij) # with NAs # xi added
+      pi_ij = pnorm(xi+le) # xi added
+      if (update_xi) {
+        xi = xi.post(z_ij-le, m_j, mu_xi, sigsq_xi) # xi update
       }
-      pi_ij = pnorm(tcrossprod(Lambda, eta)) 
     }
     
     # update Sigj
@@ -332,12 +439,18 @@ bmc <- function(Data = list(), MCMC = list(thin=1, burnin=0, save=1000),
     
     # update gamma_ij, beta_ij 
     if (hetero) { 
-      gbcpp = gbcpp_post(Y2, X2, pi_ij, invSigj, Sigj, sigj_sq, idx_j, m_j, Start, End)
+      gbcpp = gbcpp_post(Y2, X2, pi_ij, invSigj, Sigj, sigj_sq, idx_j, m_j, Start, End, 
+                         cutoff, apply_cutoff)
     } else {
-      gbcpp = gbcpp_post(Y, X, pi_ij, invSigj, Sigj, sigj_sq, idx_j, m_j, Start, End)
+      gbcpp = gbcpp_post(Y, X, pi_ij, invSigj, Sigj, sigj_sq, idx_j, m_j, Start, End, 
+                         cutoff, apply_cutoff)
     }
     gamma_ij = gbcpp$gamma_ij
     beta_ij = gbcpp$beta_ij
+    
+    if (apply_cutoff) {
+      kappa_ij = gbcpp$kappa_ij
+    }
     
     # 3. normal error
     # update eps
@@ -354,6 +467,9 @@ bmc <- function(Data = list(), MCMC = list(thin=1, burnin=0, save=1000),
     if ((s > burnin) & (s-burnin) %% thin==0) {
       out$sigj_sq.save[,(s-burnin)/thin] = sigj_sq
       out$gamma_ij.save[,,(s-burnin)/thin] = gamma_ij
+      if (apply_cutoff) {
+        out$kappa_ij.save[,,(s-burnin)/thin] = kappa_ij
+      }
       for (j in 1:J) {
         out$beta_ij.save[[j]][,,(s-burnin)/thin] = beta_ij[[j]]
       }
@@ -361,12 +477,19 @@ bmc <- function(Data = list(), MCMC = list(thin=1, burnin=0, save=1000),
       if (sp) { 
         out$pi_ij.save[,,(s-burnin)/thin] = pi_ij 
       } else {
+        if (update_xi) {
+          out$xi.save[(s-burnin)/thin] = xi
+        }
         out$Lambda.save[[(s-burnin)/thin]] = Lambda
         out$eta.save[[(s-burnin)/thin]] = eta
         out$covMean = out$covMean + Omega/save
       }
       if (hetero) {
-        out$pi_t.save[(s-burnin)/thin] = pi_t
+        if (!hetero_simpler) {
+          out$alpha.save[,(s-burnin)/thin] = alpha
+        } else {
+          out$pi_t[(s-burnin)/thin] = pi_t
+        }
         out$t_ij.save[,,(s-burnin)/thin] = t_ij
         out$d_ij.save[,,(s-burnin)/thin] = d_ij
         out$accept = out$accept + td_ij$accept/save

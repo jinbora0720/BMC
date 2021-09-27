@@ -25,7 +25,9 @@ dosres_plot <- function(i, j, data, result, realdata = FALSE, pred = FALSE) {
     J <- length(uniq_aenm)
     
     # result 
-    gamma_ij.postm <- result
+    gamma_ij.postm <- result$gamma_ij.postm
+    t_ij.postm <- result$t_ij.postm
+    # actprob.postm <- result$actprob.postm
     
     inew <- which(idx_j[[j]] == i)
     p <- data.frame(resp = orgY[[j]][Start[inew,j]:End[inew,j]], 
@@ -34,8 +36,13 @@ dosres_plot <- function(i, j, data, result, realdata = FALSE, pred = FALSE) {
       geom_point(aes(logc, resp), color="blue", size=3) + 
       labs(x=expression(paste("Dose (", log[10], " ", mu, "M)", sep="")), y="Response") +
       theme_minimal() + theme_bw() + theme(aspect.ratio = 0.7) + 
+      # labs(title=paste(uniq_chnm[i],",\n", uniq_aenm[j], sep=""),
+      #      subtitle=paste("Predicted Pr(Activity) =", actprob.postm[i,j],
+      #                     "\nPredicted Pr(Mean Effect) =", gamma_ij.postm[i,j], 
+      #                     "\nPredicted Pr(Var. Effect) =", t_ij.postm[i,j]))  
       labs(title=paste(uniq_chnm[i],",\n", uniq_aenm[j], sep=""),
-           subtitle=paste("Predicted Pr(Mean Effect) =", gamma_ij.postm[i,j]))  
+           subtitle=paste("Predicted Pr(Mean Effect) =", gamma_ij.postm[i,j], 
+                          "\nPredicted Pr(Var. Effect) =", t_ij.postm[i,j]))  
     
   } else if (realdata) {
     
@@ -57,6 +64,7 @@ dosres_plot <- function(i, j, data, result, realdata = FALSE, pred = FALSE) {
     out <- result$out
     t_ij.postm <- out$t_ij.postm
     gamma_ij.postm <- out$gamma_ij.postm
+    kappa_ij.postm <- out$kappa_ij.postm
     
     hit_mat <- result$hit_mat
     
@@ -78,6 +86,10 @@ dosres_plot <- function(i, j, data, result, realdata = FALSE, pred = FALSE) {
     plotdata$respLqt <- fitted(loess(respLqt~logc, plotdata))
     plotdata$respUqt <- fitted(loess(respUqt~logc, plotdata))
     
+    gamij <- sprintf("%.3f", gamma_ij.postm[i,j])
+    kapij <- sprintf("%.3f", kappa_ij.postm[i,j])
+    tij <- sprintf("%.3f", t_ij.postm[i,j])
+    
     p = ggplot(plotdata) + 
       geom_point(aes(logc, resp)) + 
       geom_ribbon(aes(logc, ymin=respLqt, ymax=respUqt), alpha=0.1) +
@@ -88,8 +100,15 @@ dosres_plot <- function(i, j, data, result, realdata = FALSE, pred = FALSE) {
       labs(title=paste(uniq_chnm[i],",\n", uniq_aenm[j], sep=""),
            subtitle=paste("EPA hit-call =", hit_mat[i,j],
                           "\nPr(Mean Effect) =", gamma_ij.postm[i,j],
+                          "\nPr(Mean Effect (> Cutoff)) =", kappa_ij.postm[i,j],
                           "\nPr(Var Effect) =", t_ij.postm[i,j]))
-    
+      # labs(title=paste(uniq_chnm[i],",\n", uniq_aenm[j], sep=""),
+      #      subtitle=bquote(atop(atop("EPA hit-call ="~.(hit_mat[i,j]),
+      #                     "Pr("~gamma[ij]~"= 1 ) ="~.(gamij)),
+      #                     atop("Pr("~kappa[ij]~"= 1 ) ="~.(kapij),
+      #                     "Pr("~t[ij]~"= 1 ) ="~.(tij))))) +
+      # theme(plot.subtitle=element_text(size=15))
+
   } else {
     
     # data
@@ -105,7 +124,7 @@ dosres_plot <- function(i, j, data, result, realdata = FALSE, pred = FALSE) {
     End <- misdata$End
     
     # ZIPLL
-    fit_ZIPLL <- result$res_ZIPLL$fit_ZIPLL
+    fit_ZIPLL <- result$res_ZIPLL
     post.sd_ZIPLL <- fit_ZIPLL$dat[,6]
     post.mn_ZIPLL <- fit_ZIPLL$dat[,5]
     resid_ZIPLL <- fit_ZIPLL$dat[,4] - post.mn_ZIPLL
@@ -186,7 +205,7 @@ resid_plot <- function(i, j, data, result) {
   End <- data$End
   
   # ZIPLL
-  fit_ZIPLL <- result$res_ZIPLL$fit_ZIPLL
+  fit_ZIPLL <- result$res_ZIPLL
   post.sd_ZIPLL <- fit_ZIPLL$dat[,6]
   post.mn_ZIPLL <- fit_ZIPLL$dat[,5]
   resid_ZIPLL <- fit_ZIPLL$dat[,4] - post.mn_ZIPLL
