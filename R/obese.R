@@ -408,7 +408,7 @@ data.frame(obese_assays,
                                      "Fluorescence Polarization")) %>%
   ggplot() + geom_vline(xintercept = 0, color="red", linetype = "dashed") + 
   geom_point(aes(V1, V2, color = detection_technology)) +
-  labs(x = "Factor1", y = "Factor2") + 
+  labs(x = "Factor1", y = "Factor2", color = "Detection technology") + 
   scale_color_manual(values = detection_cols) +
   xlim(-2,1) + ylim(-0.085, 0.075)
 # ggsave(paste0(path, "Figure/ToxCast_obese_latfac_left.eps"))
@@ -427,7 +427,7 @@ data.frame(obese_assays,
   )) %>%
   ggplot() + geom_vline(xintercept = 0, color="red", linetype = "dashed") + 
   geom_point(aes(V1, V2, color = detection_technology)) +
-  labs(x = "Factor1", y = "Factor2") +
+  labs(x = "Factor1", y = "Factor2", color = "Detection technology") +
   scale_color_manual(values = detection_cols) + 
   xlim(-2,1) + ylim(-0.085, 0.075) 
 # ggsave(paste0(path, "Figure/ToxCast_obese_latfac_right.eps"))
